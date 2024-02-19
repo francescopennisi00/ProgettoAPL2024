@@ -6,11 +6,6 @@ import mysql.connector
 import os
 import sys
 import requests
-import socket
-import threading
-from flask import Flask
-from prometheus_client import Counter, generate_latest, REGISTRY, Gauge, Histogram
-from flask import Response
 import logging
 
 

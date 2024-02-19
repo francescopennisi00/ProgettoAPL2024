@@ -6,15 +6,10 @@ import notifier_um_pb2_grpc
 from email.message import EmailMessage
 import ssl
 import smtplib
-import socket
 import mysql.connector
 import os
 import time
 import sys
-import threading
-from flask import Flask
-from prometheus_client import Counter, generate_latest, REGISTRY, Gauge, Histogram
-from flask import Response
 import logging
 
 
