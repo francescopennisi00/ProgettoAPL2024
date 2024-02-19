@@ -228,7 +228,6 @@ class RESTQuerier:
             cls._instance = super().__new__(cls)
         return cls._querier_instance
 
-
     def make_query(self, apikey, location):
         rest_call = ENDPOINT_REST_OPEN_WEATHER.replace("LATITUDE", location[1])
         rest_call = rest_call.replace("LONGITUDE", location[2])
@@ -287,41 +286,63 @@ class RESTQuerier:
         return output_json_dict
 
 
-
 # compare values obtained from OpenWeather API call with those that have been placed into the DB
 # for recoverability from faults that occur before to possibly publish violated rules
 # returns the violated rules to be sent in the form of a dictionary that contains many other
 # dictionary with key = user_id and value = the list of (violated rule-current value) pairs
 # there is another key-value pair in the outer dictionary with key = "location" and value = array
 # that contains information about the location in common for all the entries to be entered into the DB
-def check_rules(db_cursor, api_response):
-    db_cursor.execute("SELECT rules FROM current_work WHERE worker_id = %s", (str(worker_id),))
-    rules_list = db_cursor.fetchall()
-    event_dict = dict()
-    for rules in rules_list:
-        user_violated_rules_list = list()
-        rules_json = json.loads(rules[0])
-        keys_set_target = set(rules_json.keys())
-        for key in keys_set_target:
-            temp_dict = dict()
-            if "max" in key and rules_json.get(key) != "null":
-                if api_response.get(key) > rules_json.get(key):
-                    temp_dict[key] = api_response.get(key)
-            elif "min" in key and rules_json.get(key) != "null":
-                if api_response.get(key) < rules_json.get(key):
-                    temp_dict[key] = api_response.get(key)
-            elif key == "rain" and rules_json.get(key) != "null" and api_response.get("rain") == True:
-                temp_dict[key] = api_response.get(key)
-            elif key == "snow" and rules_json.get(key) != "null" and api_response.get("snow") == True:
-                temp_dict[key] = api_response.get(key)
-            elif key == "wind_direction" and rules_json.get(key) != "null" and rules_json.get(key) == api_response.get(key):
-                temp_dict[key] = api_response.get(key)
-            user_violated_rules_list.append(temp_dict)
-        event_dict[rules_json.get("user_id")] = user_violated_rules_list
-    json_location = rules_list[0][0]  # all entries in rules_list have the same location
-    dict_location = json.loads(json_location)
-    event_dict['location'] = dict_location.get('location')
-    return json.dumps(event_dict)
+def check_rules(api_response, db_connect):
+    def check_max(key, api_response, rules_json, temp_dict):
+        if api_response.get(key) > rules_json.get(key):
+            temp_dict[key] = api_response.get(key)
+
+    def check_min(key, api_response, rules_json, temp_dict):
+        if api_response.get(key) < rules_json.get(key):
+            temp_dict[key] = api_response.get(key)
+
+    def check_rain(key, api_response, rules_json, temp_dict):
+        if api_response.get("rain") is True:
+            temp_dict[key] = api_response.get(key)
+
+    def check_snow(key, api_response, rules_json, temp_dict):
+        if api_response.get("snow") is True:
+            temp_dict[key] = api_response.get(key)
+
+    def check_wind_direction(key, api_response, rules_json, temp_dict):
+        if rules_json.get(key) == api_response.get(key):
+            temp_dict[key] = api_response.get(key)
+
+    # Function's dict
+    check_functions = {
+        "max": check_max,
+        "min": check_min,
+        "rain": check_rain,
+        "snow": check_snow,
+        "wind_direction": check_wind_direction
+    }
+
+    rules_list = db_connect.execute_query("SELECT rules FROM current_work")
+    if rules_list:
+        event_dict = dict()
+        check_functions_keys = check_functions.keys()
+        for rules in rules_list:
+            user_violated_rules_list = list()
+            rules_json = json.loads(rules[0])
+            keys_set_target = set(rules_json.keys())
+            for key in keys_set_target:
+                temp_dict = dict()
+                if rules_json.get(key) != "null":
+                    for prefix in check_functions_keys:
+                        if prefix in key:
+                            check_functions[prefix](key, api_response, rules_json, temp_dict)
+                            break
+                user_violated_rules_list.append(temp_dict)
+            event_dict[rules_json.get("user_id")] = user_violated_rules_list
+        json_location = rules_list[0][0]  # all entries in rules_list have the same location
+        dict_location = json.loads(json_location)
+        event_dict['location'] = dict_location.get('location')
+        return json.dumps(event_dict)
 
 
 # function for recovering unchecked rules when worker goes down before publishing notification event
@@ -343,17 +364,12 @@ def find_current_work():
         # make OpenWeather API call
         querier = RESTQuerier()
         actual_weather_values = querier.make_query(apikey=os.environ.get('APIKEY'), location=location_info)
-        events_to_be_sent = check_rules(actual_weather_values)
+        events_to_be_sent = check_rules(actual_weather_values, db_connection)
+    elif result is False:
+        return result
     else:
         events_to_be_sent = "{}"
-    except mysql.connector.Error as error:
-        logger.error("Exception raised! -> " + str(error) + "\n")
-        try:
-            db_conn.rollback()
-        except Exception as ex:
-            logger.error(f"Exception raised in rollback: {ex}\n")
-        return False
-        return events_to_be_sent
+    return events_to_be_sent
 
 
 if __name__ == "__main__":
@@ -420,7 +436,7 @@ if __name__ == "__main__":
 
             # call to find_current_work and publish them in topic "event_to_be_sent"
             current_work = find_current_work()
-            if current_work != '{}':  # JSON representation of an empty dictionary.
+            if current_work != '{}' and current_work != False:  # {} is the JSON representation of an empty dictionary.
                 while not kafka_producer.produce_kafka_message(PUBLICATION_TOPIC_NAME, BOOTSTRAP_SERVER_KAFKA, current_work):
                     pass
             else:
