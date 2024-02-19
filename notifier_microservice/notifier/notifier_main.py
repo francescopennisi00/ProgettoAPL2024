@@ -55,7 +55,7 @@ class EmailSender:
         return email_to_return
 
     @staticmethod
-    def _insert_rule_in_mail_text(rule, value, name_loc, country, state):
+    def __insert_rule_in_mail_text(rule, value, name_loc, country, state):
         if rule == "max_temp" or rule == "min_temp":
             return f"The temperature in {name_loc} ({country}, {state}) is {str(value)} °C!\n"
         elif rule == "max_humidity" or rule == "min_humidity":
@@ -81,7 +81,7 @@ class EmailSender:
         for element in rules_list:
             if element:
                 rule = next(iter(element))
-                body += self._insert_rule_in_mail_text(rule, element[rule], name_location, country, state)
+                body += self.__insert_rule_in_mail_text(rule, element[rule], name_location, country, state)
         em = EmailMessage()
         em['From'] = self._email_address
         em['To'] = recipient_email
@@ -150,12 +150,12 @@ class SecretInitializer:
 
     # setting env variables for secrets
     def init_secrets(self):
-        self._init_secret('PASSWORD')
-        self._init_secret('APP_PASSWORD')
-        self._init_secret('EMAIL')
+        self.__init_secret('PASSWORD')
+        self.__init_secret('APP_PASSWORD')
+        self.__init_secret('EMAIL')
 
     @staticmethod
-    def _init_secret(env_var_name):
+    def __init_secret(env_var_name):
         secret_path = os.environ.get(env_var_name)
         with open(secret_path, 'r') as file:
             secret_value = file.read()
@@ -184,8 +184,10 @@ class DatabaseConnector:
             if not select:
                 if commit:
                     cursor.close()
-                    self.commit_update()  # to make changes effective
-                    return True
+                    if self.commit_update():  # to make changes effective
+                        return True
+                    else:
+                        return False
                 else:
                     # in this case insert, delete or update query was executed but commit will be done later
                     cursor.close()
@@ -201,20 +203,22 @@ class DatabaseConnector:
     def commit_update(self):
         try:
             self._connection.commit()
+            return True
         except mysql.connector.Error as error:
             logger.error("MySQL Exception raised! -> " + str(error) + "\n")
             try:
                 self._connection.rollback()
             except Exception as exe:
                 logger.error(f" MySQL Exception raised in rollback: {exe}\n")
-        raise SystemExit
+            return False
 
     def close(self):
         try:
             self._connection.close()
+            return True
         except mysql.connector.Error as error:
             logger.error("MySQL Exception raised! -> " + str(error) + "\n")
-        raise SystemExit
+        return False
 
 
 # connection with DB and update the entry of the notification sent
@@ -319,9 +323,10 @@ if __name__ == "__main__":
         select=False
     )
     if not bool_outcome:
-        sys.exit()
+        sys.exit("Error in creating table events")
 
-    db_connector.close()
+    if not db_connector.close():
+        sys.exit("Error in closing DB connection")
 
     # instantiating Kafka consumer instance
     kafka_consumer = KafkaConsumer(
@@ -392,7 +397,8 @@ if __name__ == "__main__":
                         select=False)
                     if not bool_result:
                         raise SystemExit
-                db.commit_update()  # to make changes effective after inserting ALL the violated_rules
+                if not db.commit_update():  # to make changes effective after inserting ALL the violated_rules
+                    raise SystemExit("Error in commit update in DB")
                 db.close()
 
                 # make commit to Kafka broker after Kafka msg has been stored in DB

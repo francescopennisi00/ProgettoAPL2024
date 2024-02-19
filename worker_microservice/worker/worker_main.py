@@ -19,6 +19,7 @@ SUBSCRIPTION_TOPIC_NAME = "event_update"
 PUBLICATION_TOPIC_NAME = "event_to_be_notified"
 ACKS_KAFKA_PRODUCER_PARAMETER = 1
 ATTEMPTS = 5
+ENDPOINT_REST_OPEN_WEATHER = f"https://api.openweathermap.org/data/2.5/weather?lat=LATITUDE&lon=LONGITUDE&units=metric&appid=APIKEY"
 
 
 def commit_completed(er, partitions):
@@ -51,8 +52,10 @@ class DatabaseConnector:
             if not select:
                 if commit:
                     cursor.close()
-                    self.commit_update()  # to make changes effective
-                    return True
+                    if self.commit_update():  # to make changes effective
+                        return True
+                    else:
+                        return False
                 else:
                     # in this case insert, delete or update query was executed but commit will be done later
                     cursor.close()
@@ -68,148 +71,22 @@ class DatabaseConnector:
     def commit_update(self):
         try:
             self._connection.commit()
+            return True
         except mysql.connector.Error as error:
             logger.error("MySQL Exception raised! -> " + str(error) + "\n")
             try:
                 self._connection.rollback()
             except Exception as exe:
                 logger.error(f" MySQL Exception raised in rollback: {exe}\n")
-        raise SystemExit
+            return False
 
     def close(self):
         try:
             self._connection.close()
+            return True
         except mysql.connector.Error as error:
             logger.error("MySQL Exception raised! -> " + str(error) + "\n")
-        raise SystemExit
-
-
-def make_query(query):
-    try:
-        resp = requests.get(url=query)
-        resp.raise_for_status()
-        response = resp.json()
-        if response.get('cod') != 200:
-            raise Exception('Query failed: ' + response.get('message'))
-        logger.info(json.dumps(response) + "\n")
-        return response
-    except requests.JSONDecodeError as er:
-        logger.error(f'JSON Decode error: {er}\n')
-        raise SystemExit
-    except requests.HTTPError as er:
-        logger.error(f'HTTP Error: {er}\n')
-        raise SystemExit
-    except requests.exceptions.RequestException as er:
-        logger.error(f'Request failed: {er}\n')
-        raise SystemExit
-    except Exception as er:
-        logger.error(f'Error: {er}\n')
-        raise SystemExit
-
-
-# compare values obtained from OpenWeather API call with those that have been placed into the DB
-# for recoverability from faults that occur before to possibly publish violated rules
-# returns the violated rules to be sent in the form of a dictionary that contains many other
-# dictionary with key = user_id and value = the list of (violated rule-current value) pairs
-# there is another key-value pair in the outer dictionary with key = "location" and value = array
-# that contains information about the location in common for all the entries to be entered into the DB
-def check_rules(db_cursor, api_response):
-    db_cursor.execute("SELECT rules FROM current_work WHERE worker_id = %s", (str(worker_id),))
-    rules_list = db_cursor.fetchall()
-    event_dict = dict()
-    for rules in rules_list:
-        user_violated_rules_list = list()
-        rules_json = json.loads(rules[0])
-        keys_set_target = set(rules_json.keys())
-        for key in keys_set_target:
-            temp_dict = dict()
-            if "max" in key and rules_json.get(key) != "null":
-                if api_response.get(key) > rules_json.get(key):
-                    temp_dict[key] = api_response.get(key)
-            elif "min" in key and rules_json.get(key) != "null":
-                if api_response.get(key) < rules_json.get(key):
-                    temp_dict[key] = api_response.get(key)
-            elif key == "rain" and rules_json.get(key) != "null" and api_response.get("rain") == True:
-                temp_dict[key] = api_response.get(key)
-            elif key == "snow" and rules_json.get(key) != "null" and api_response.get("snow") == True:
-                temp_dict[key] = api_response.get(key)
-            elif key == "wind_direction" and rules_json.get(key) != "null" and rules_json.get(key) == api_response.get(key):
-                temp_dict[key] = api_response.get(key)
-            user_violated_rules_list.append(temp_dict)
-        event_dict[rules_json.get("user_id")] = user_violated_rules_list
-    json_location = rules_list[0][0]  # all entries in rules_list have the same location
-    dict_location = json.loads(json_location)
-    event_dict['location'] = dict_location.get('location')
-    return json.dumps(event_dict)
-
-
-# function to formatting data returned by OpenWeather API according to our business logic
-def format_data(data):
-    output_json_dict = dict()
-    output_json_dict['max_temp'] = data["main"]["temp"]
-    output_json_dict['min_temp'] = data["main"]["temp"]
-    output_json_dict['max_humidity'] = data["main"]["humidity"]
-    output_json_dict['min_humidity'] = data["main"]["humidity"]
-    output_json_dict['max_pressure'] = data["main"]["pressure"]
-    output_json_dict['min_pressure'] = data["main"]["pressure"]
-    output_json_dict["max_wind_speed"] = data["wind"]["speed"]
-    output_json_dict["min_wind_speed"] = data["wind"]["speed"]
-    output_json_dict["max_cloud"] = data["clouds"]["all"]
-    output_json_dict["min_cloud"] = data["clouds"]["all"]
-    direction_list = ["N", "NE", "E", " SE", "S", "SO", "O", "NO"]
-    j = 0
-    for i in range(0, 316, 45):
-        if (i - 22.5) <= data["wind"]["deg"] <= (i + 22.5):
-            output_json_dict["wind_direction"] = direction_list[j]
-            break
-        j = j + 1
-    if data["weather"][0]["main"] == "Rain":
-        output_json_dict["rain"] = True
-    else:
-        output_json_dict["rain"] = False
-    if data["weather"][0]["main"] == "Snow":
-        output_json_dict["snow"] = True
-    else:
-        output_json_dict["snow"] = False
-    return output_json_dict
-
-
-# function for recovering unchecked rules when worker goes down before publishing notification event
-def find_current_work():
-    try:
-        with (mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'),
-                                      user=os.environ.get('USER'), password=os.environ.get('PASSWORD'),
-                                      database=os.environ.get('DATABASE')) as db_conn):
-            # without a buffered cursor, the results are "lazily" loaded, meaning that "fetchone"
-            # actually only fetches one row from the full result set of the query.
-            # When you will use the same cursor again, it will complain that you still have
-            # n-1 results (where n is the result set amount) waiting to be fetched.
-            # However, when you use a buffered cursor the connector fetches ALL rows behind the scenes,
-            # and you just take one from the connector so the mysql db won't complain.
-            # buffered=True is needed because we next will use db_cursor as first parameter of check_rules
-            db_cursor = db_conn.cursor(buffered=True)
-            db_cursor.execute("SELECT rules FROM current_work WHERE worker_id = %s", (str(worker_id),))
-            result = db_cursor.fetchone()
-            if result:
-                dict_row = json.loads(result[0])
-                # all entries in current_works are related to the same location
-                location_info = dict_row.get('location')
-                # make OpenWeather API call
-                apikey = os.environ.get('APIKEY')
-                rest_call = f"https://api.openweathermap.org/data/2.5/weather?lat={location_info[1]}&lon={location_info[2]}&units=metric&appid={apikey}"
-                data = make_query(rest_call)
-                formatted_data = format_data(data)
-                events_to_be_sent = check_rules(db_cursor, formatted_data)
-            else:
-                events_to_be_sent = "{}"
-    except mysql.connector.Error as error:
-        logger.error("Exception raised! -> " + str(error) + "\n")
-        try:
-            db_conn.rollback()
-        except Exception as ex:
-            logger.error(f"Exception raised in rollback: {ex}\n")
         return False
-    return events_to_be_sent
 
 
 class KafkaProducer:
@@ -222,7 +99,7 @@ class KafkaProducer:
         })
 
     @staticmethod
-    def _create_topic(broker, topic_name):
+    def create_topic(broker, topic_name):
         admin_conf = {'bootstrap.servers': broker}
         kadmin = AdminClient(admin_conf)
         # Create topic if not exists
@@ -240,30 +117,17 @@ class KafkaProducer:
             new_topic = NewTopic(topic_name, 1, 1)  # Number-of-partitions = 1, Number-of-replicas = 1
             kadmin.create_topics([new_topic,])
 
-    def produce_kafka_message(self, topic_name, kafka_broker, message):
-        # Publish on the specific topic
-        try:
-            self._producer.produce(topic_name, value=message, callback=self._delivery_callback)
-        except BufferError:
-            logger.error(
-                '%% Local producer queue is full (%d messages awaiting delivery): try again\n' % len(kafka_broker))
-            return False
-        # Wait until the message have been delivered
-        logger.error("Waiting for message to be delivered\n")
-        self._producer.flush()
-        return True
-
     @staticmethod
     # Optional per-message delivery callback (triggered by poll() or flush())
     # when a message has been successfully delivered or permanently
     # failed delivery (after retries).
-    def _delivery_callback(err, msg):
+    def __delivery_callback(err, message):
         if err:
             logger.error('%% Message failed delivery: %s\n' % err)
             raise SystemExit("Exiting after error in delivery message to Kafka broker\n")
         else:
             logger.info('%% Message delivered to %s, partition[%d] @ %d\n' %
-                        (msg.topic(), msg.partition(), msg.offset()))
+                        (message.topic(), message.partition(), message.offset()))
             db_connect = DatabaseConnector(
                 hostname=os.environ.get("HOSTNAME"),
                 port=os.environ.get("PORT"),
@@ -273,7 +137,21 @@ class KafkaProducer:
             )
             if not db_connect.execute_query(query="DELETE FROM current_work", commit=True, select=False):
                 raise SystemExit
-            db_connect.close()
+            if not db_connect.close():
+                raise SystemExit("Error in closing DB connection")
+
+    def produce_kafka_message(self, topic_name, kafka_broker, message):
+        # Publish on the specific topic
+        try:
+            self._producer.produce(topic_name, value=message, callback=self.__delivery_callback)
+        except BufferError:
+            logger.error(
+                '%% Local producer queue is full (%d messages awaiting delivery): try again\n' % len(kafka_broker))
+            return False
+        # Wait until the message have been delivered
+        logger.error("Waiting for message to be delivered\n")
+        self._producer.flush()
+        return True
 
 
 class KafkaConsumer:
@@ -327,16 +205,155 @@ class SecretInitializer:
 
     # setting env variables for secrets
     def init_secrets(self):
-        self._init_secret('PASSWORD')
-        self._init_secret('APIKEY')
+        self.__init_secret('PASSWORD')
+        self.__init_secret('APIKEY')
 
     @staticmethod
-    def _init_secret(env_var_name):
+    def __init_secret(env_var_name):
         secret_path = os.environ.get(env_var_name)
         with open(secret_path, 'r') as file:
             secret_value = file.read()
         os.environ[env_var_name] = secret_value
         logger.info(f"Initialized {env_var_name}.\n")
+
+
+# implementing pattern Singleton for SecretInitializer class
+class RESTQuerier:
+
+    _querier_instance = None  # starter value: no object initially instantiated
+
+    # if RESTQuerier object is already instantiated, then return it without re-instantiating
+    def __new__(cls):
+        if not hasattr(cls, '_querier_instance'):
+            cls._instance = super().__new__(cls)
+        return cls._querier_instance
+
+
+    def make_query(self, apikey, location):
+        rest_call = ENDPOINT_REST_OPEN_WEATHER.replace("LATITUDE", location[1])
+        rest_call = rest_call.replace("LONGITUDE", location[2])
+        rest_call = rest_call.replace("APIKEY", apikey)
+        logger.info(f"ENDPOINT OPEN WEATHER: {rest_call}\n")
+        try:
+            resp = requests.get(url=rest_call)
+            resp.raise_for_status()
+            response = resp.json()
+            if response.get('cod') != 200:
+                raise Exception('Query failed: ' + response.get('message'))
+            logger.info("OPEN WEATHER RESPONSE: " + json.dumps(response) + "\n")
+            return self.__format_data(response)
+        except requests.JSONDecodeError as er:
+            logger.error(f'JSON Decode error: {er}\n')
+            raise SystemExit
+        except requests.HTTPError as er:
+            logger.error(f'HTTP Error: {er}\n')
+            raise SystemExit
+        except requests.exceptions.RequestException as er:
+            logger.error(f'Request failed: {er}\n')
+            raise SystemExit
+        except Exception as er:
+            logger.error(f'Error: {er}\n')
+            raise SystemExit
+
+    @staticmethod
+    # function to formatting data returned by OpenWeather API according to our business logic
+    def __format_data(data):
+        output_json_dict = dict()
+        output_json_dict['max_temp'] = data["main"]["temp"]
+        output_json_dict['min_temp'] = data["main"]["temp"]
+        output_json_dict['max_humidity'] = data["main"]["humidity"]
+        output_json_dict['min_humidity'] = data["main"]["humidity"]
+        output_json_dict['max_pressure'] = data["main"]["pressure"]
+        output_json_dict['min_pressure'] = data["main"]["pressure"]
+        output_json_dict["max_wind_speed"] = data["wind"]["speed"]
+        output_json_dict["min_wind_speed"] = data["wind"]["speed"]
+        output_json_dict["max_cloud"] = data["clouds"]["all"]
+        output_json_dict["min_cloud"] = data["clouds"]["all"]
+        direction_list = ["N", "NE", "E", " SE", "S", "SO", "O", "NO"]
+        j = 0
+        for i in range(0, 316, 45):
+            if (i - 22.5) <= data["wind"]["deg"] <= (i + 22.5):
+                output_json_dict["wind_direction"] = direction_list[j]
+                break
+            j = j + 1
+        if data["weather"][0]["main"] == "Rain":
+            output_json_dict["rain"] = True
+        else:
+            output_json_dict["rain"] = False
+        if data["weather"][0]["main"] == "Snow":
+            output_json_dict["snow"] = True
+        else:
+            output_json_dict["snow"] = False
+        return output_json_dict
+
+
+
+# compare values obtained from OpenWeather API call with those that have been placed into the DB
+# for recoverability from faults that occur before to possibly publish violated rules
+# returns the violated rules to be sent in the form of a dictionary that contains many other
+# dictionary with key = user_id and value = the list of (violated rule-current value) pairs
+# there is another key-value pair in the outer dictionary with key = "location" and value = array
+# that contains information about the location in common for all the entries to be entered into the DB
+def check_rules(db_cursor, api_response):
+    db_cursor.execute("SELECT rules FROM current_work WHERE worker_id = %s", (str(worker_id),))
+    rules_list = db_cursor.fetchall()
+    event_dict = dict()
+    for rules in rules_list:
+        user_violated_rules_list = list()
+        rules_json = json.loads(rules[0])
+        keys_set_target = set(rules_json.keys())
+        for key in keys_set_target:
+            temp_dict = dict()
+            if "max" in key and rules_json.get(key) != "null":
+                if api_response.get(key) > rules_json.get(key):
+                    temp_dict[key] = api_response.get(key)
+            elif "min" in key and rules_json.get(key) != "null":
+                if api_response.get(key) < rules_json.get(key):
+                    temp_dict[key] = api_response.get(key)
+            elif key == "rain" and rules_json.get(key) != "null" and api_response.get("rain") == True:
+                temp_dict[key] = api_response.get(key)
+            elif key == "snow" and rules_json.get(key) != "null" and api_response.get("snow") == True:
+                temp_dict[key] = api_response.get(key)
+            elif key == "wind_direction" and rules_json.get(key) != "null" and rules_json.get(key) == api_response.get(key):
+                temp_dict[key] = api_response.get(key)
+            user_violated_rules_list.append(temp_dict)
+        event_dict[rules_json.get("user_id")] = user_violated_rules_list
+    json_location = rules_list[0][0]  # all entries in rules_list have the same location
+    dict_location = json.loads(json_location)
+    event_dict['location'] = dict_location.get('location')
+    return json.dumps(event_dict)
+
+
+# function for recovering unchecked rules when worker goes down before publishing notification event
+def find_current_work():
+    db_connection = DatabaseConnector(
+        hostname=os.environ.get("HOSTNAME"),
+        port=os.environ.get("PORT"),
+        user=os.environ.get("USER"),
+        password=os.environ.get("PASSWORD"),
+        database=os.environ.get("DATABASE")
+    )
+    result = db_connection.execute_query("SELECT rules FROM current_work")
+    if result:
+        # we are interested in any of the entries because we are interested in location and
+        # all the entries in current_works are related to the same location
+        result = result[0]
+        dict_row = json.loads(result[0])  # extract json of rules to be checked and convert it into dict
+        location_info = dict_row.get('location')
+        # make OpenWeather API call
+        querier = RESTQuerier()
+        actual_weather_values = querier.make_query(apikey=os.environ.get('APIKEY'), location=location_info)
+        events_to_be_sent = check_rules(actual_weather_values)
+    else:
+        events_to_be_sent = "{}"
+    except mysql.connector.Error as error:
+        logger.error("Exception raised! -> " + str(error) + "\n")
+        try:
+            db_conn.rollback()
+        except Exception as ex:
+            logger.error(f"Exception raised in rollback: {ex}\n")
+        return False
+        return events_to_be_sent
 
 
 if __name__ == "__main__":
@@ -369,9 +386,10 @@ if __name__ == "__main__":
         select=False
     )
     if not outcome:
-        sys.exit()
+        sys.exit("Error in creating 'current_work' DB table")
 
-    db_connector.close()
+    if not db_connector.close():
+        sys.exit("Error in closing DB connection")
 
     # instantiating Kafka producer instance
     kafka_producer = KafkaProducer(
@@ -379,6 +397,9 @@ if __name__ == "__main__":
         group_id=GROUP_ID,
         acks=ACKS_KAFKA_PRODUCER_PARAMETER
     )
+
+    # creation of the topic on which to publish
+    KafkaProducer.create_topic(BOOTSTRAP_SERVER_KAFKA, PUBLICATION_TOPIC_NAME)
 
     # instantiating Kafka consumer instance
     kafka_consumer = KafkaConsumer(
@@ -471,7 +492,8 @@ if __name__ == "__main__":
                         select=True
                     ):
                         raise SystemExit
-                db.commit_update()  # to make changes effective after inserting ALL the violated_rules
+                if not db.commit_update():  # to make changes effective after inserting ALL the violated_rules
+                    raise SystemExit("Error in commit updates in DB")
                 db.close()
 
                 # make commit to Kafka broker after Kafka msg has been stored in DB
