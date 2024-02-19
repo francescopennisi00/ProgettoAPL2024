@@ -236,6 +236,9 @@ def update_event_sent(event_id):
     )
     if not outcome:
         return False
+
+    database_connector.close()
+
     return True
 
 
@@ -287,6 +290,7 @@ def find_event_not_sent():
             # to avoid resending the email as much as possible
             for attempt in range(ATTEMPTS):
                 if update_event_sent(x[0]):
+                    database_connector.close()
                     break
                 time.sleep(1)
             else:
@@ -389,6 +393,7 @@ if __name__ == "__main__":
                     if not bool_result:
                         raise SystemExit
                 db.commit_update()  # to make changes effective after inserting ALL the violated_rules
+                db.close()
 
                 # make commit to Kafka broker after Kafka msg has been stored in DB
                 # we give some attempts to retrying commit in order to avoid replication of the same email
