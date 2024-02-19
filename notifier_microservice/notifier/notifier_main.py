@@ -22,14 +22,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# definition of the metrics to be exposed
-NOTIFICATIONS = Counter('NOTIFIER_notifications_sent', 'Total number of notifications sent')
-NOTIFICATIONS_ERROR = Counter('NOTIFIER_notifications_error', 'Total number of errors in sending email')
-DELTA_TIME = Gauge('NOTIFIER_notification_latency_nanoseconds', 'Latency beetween instant in which worker publishes the message and instant in which notifier sends email')
-QUERY_DURATIONS_HISTOGRAM = Histogram('NOTIFIER_query_durations_nanoseconds_DB', 'DB query durations in nanoseconds', buckets=[5000000, 10000000, 25000000, 50000000, 75000000, 100000000, 250000000, 500000000, 750000000, 1000000000, 2500000000,5000000000,7500000000,10000000000])
-# buckets indicated because of measuring time in nanoseconds
-
-
 def commit_completed(er, partitions):
     if er:
         logger.error(str(er))
@@ -56,13 +48,10 @@ def fetch_email(userid):
 # connection with DB and update the entry of the notification sent
 def update_event_sent(event_id):
     try:
-        DBstart_time = time.time_ns()
         with mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'),user=os.environ.get('USER'), password=os.environ.get('PASSWORD'), database=os.environ.get('DATABASE')) as db:
             cursor = db.cursor()
             cursor.execute("UPDATE events SET sent=TRUE, time_stamp=CURRENT_TIMESTAMP WHERE id = %s", (str(event_id),))
             db.commit()
-            DBend_time = time.time_ns()
-            QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
             boolean_to_return = True
     except mysql.connector.Error as error:
         logger.error("Exception raised! -> " + str(error) + "\n")
@@ -125,13 +114,10 @@ def send_email(email, violated_rules, name_location, country, state):
 # find events to send, send them by email and update events in DB
 def find_event_not_sent():
     try:
-        DBstart_time = time.time_ns()
         db = mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'), user=os.environ.get('USER'), password=os.environ.get('PASSWORD'), database=os.environ.get('DATABASE'))
         cursor = db.cursor()
         cursor.execute("SELECT * FROM events WHERE sent=FALSE AND notifier_id=%s", (notifier_id,))
         results = cursor.fetchall()
-        DBend_time = time.time_ns()
-        QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
         for x in results:
             email = fetch_email(x[1])
             if email == "null":
@@ -139,11 +125,8 @@ def find_event_not_sent():
                 db.close()
                 return False
             if email == "not present anymore":
-                DBstart_time = time.time_ns()
                 cursor.execute("DELETE FROM events WHERE id=%s", (x[0], ))
                 db.commit()
-                DBend_time = time.time_ns()
-                QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
                 continue
             loc_name = x[2]
             loc_country = x[3]
@@ -153,14 +136,7 @@ def find_event_not_sent():
             if res != True:
                 cursor.close()
                 db.close()
-                NOTIFICATIONS_ERROR.inc()
                 return "error_in_send_email"
-            #  violated_rules contains also a key value pair with the timestamp of the kafka message publications
-            #  This is important for exposure the notification latency metric
-            end_time = time.time_ns()
-            start_time = violated_rules.get("timestamp_worker")
-            DELTA_TIME.set(end_time-start_time)
-            NOTIFICATIONS.inc()
             # we give 5 attempts to try to update the DB in order
             # to avoid resending the email as much as possible
             for t in range(5):
@@ -178,30 +154,6 @@ def find_event_not_sent():
             logger.error(f"Exception raised in rollback: {exe}\n")
         raise SystemExit
 
-
-def create_app():
-    app = Flask(__name__)
-
-    @app.route('/metrics')
-    def metrics():
-        # Export all the metrics as text for Prometheus
-        return Response(generate_latest(REGISTRY), mimetype='text/plain')
-
-    return app
-
-
-def serve_prometheus():
-    port = 50055
-    hostname = socket.gethostname()
-    logger.info(f'Hostname: {hostname} -> server starting on port {str(port)}')
-    app.run(host='0.0.0.0', port=port, threaded=True)
-
-
-notifier_id = os.environ.get(("NOTIFIERID"))
-
-
-# create Flask application
-app = create_app()
 
 if __name__ == "__main__":
 
@@ -222,11 +174,6 @@ if __name__ == "__main__":
     os.environ['EMAIL'] = secret_email_value
 
     logger.info("ENV variables initialization done")
-
-    logger.info("Starting Prometheus serving thread!\n")
-    threadAPIGateway = threading.Thread(target=serve_prometheus)
-    threadAPIGateway.daemon = True
-    threadAPIGateway.start()
 
     # start Kafka subscription
     c = confluent_kafka.Consumer({'bootstrap.servers':'kafka-service:9092', 'group.id':'group1', 'enable.auto.commit':'false', 'auto.offset.reset':'latest', 'on_commit':commit_completed})
@@ -252,13 +199,10 @@ if __name__ == "__main__":
 
             # Creating table if not exits
             try:
-                DBstart_time = time.time_ns()
                 with mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'), user=os.environ.get('USER'), password=os.environ.get('PASSWORD'), database=os.environ.get('DATABASE')) as mydb:
                     mycursor = mydb.cursor()
                     mycursor.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTO_INCREMENT, user_id INTEGER NOT NULL, location_name VARCHAR(70) NOT NULL, location_country VARCHAR(10) NOT NULL, location_state VARCHAR(30) NOT NULL, rules JSON NOT NULL, time_stamp TIMESTAMP NOT NULL, sent BOOLEAN NOT NULL, notifier_id VARCHAR(60) NOT NULL, INDEX notifier_ind (notifier_id))")
                     mydb.commit()  # to make changes effective
-                    DBend_time = time.time_ns()
-                    QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
             except mysql.connector.Error as err:
                 logger.error("Exception raised! -> " + str(err) +"\n")
                 try:
@@ -307,10 +251,7 @@ if __name__ == "__main__":
                             temp_dict["violated_rules"] = data.get(user_id)
                             temp_dict["timestamp_worker"] = worker_timestamp
                             violated_rules = json.dumps(temp_dict)
-                            DBstart_time = time.time_ns()
                             mycursor.execute("INSERT INTO events (user_id, location_name, location_country, location_state, rules, time_stamp, sent, notifier_id) VALUES(%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, FALSE, %s)", (str(user_id), location_name, location_country, location_state, violated_rules, notifier_id))
-                            DBend_time = time.time_ns()
-                            QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
                         mydb.commit()  # to make changes effective after inserting ALL the violated_rules
                 except mysql.connector.Error as err:
                     logger.error("Exception raised! -> " + str(err) + "\n")

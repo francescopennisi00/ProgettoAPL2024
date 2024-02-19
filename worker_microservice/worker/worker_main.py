@@ -18,16 +18,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# definition of the metrics to be exposed
-ERROR_REQUEST_OPEN_WEATHER = Counter('WORKER_error_request_OpenWeather', 'Total number of requests sent to OpenWeather that failed')
-REQUEST_OPEN_WEATHER = Counter('WORKER_requests_to_OpenWeather', 'Total number of API calls to OpenWeather')
-DELTA_TIME = Gauge('WORKER_response_time_OpenWeather', 'Difference between instant when worker sends request to OpenWeather and instant when it receives the response')
-KAFKA_MESSAGE = Counter('WORKER_kafka_message_number', 'Total number of kafka messages produced by worker-service')
-KAFKA_MESSAGE_DELIVERED = Counter('WORKER_kafka_message_delivered_number', 'Total number of kafka messages produced by worker-service that have been delivered correctly')
-QUERY_DURATIONS_HISTOGRAM = Histogram('WORKER_query_durations_nanoseconds_DB', 'DB query durations in nanoseconds', buckets=[5000000, 10000000, 25000000, 50000000, 75000000, 100000000, 250000000, 500000000, 750000000, 1000000000, 2500000000,5000000000,7500000000,10000000000])
-# buckets indicated because of measuring time in nanoseconds
-
-
 def commit_completed(er, partitions):
     if er:
         logger.error(str(er))
@@ -38,35 +28,21 @@ def commit_completed(er, partitions):
 
 
 def make_query(query):
-    start_time = time.time_ns()
     try:
-        REQUEST_OPEN_WEATHER.inc()
         resp = requests.get(url=query)
         resp.raise_for_status()
         response = resp.json()
-        end_time = time.time_ns()
-        DELTA_TIME.set(end_time-start_time)
         if response.get('cod') != 200:
-            ERROR_REQUEST_OPEN_WEATHER.inc()
             raise Exception('Query failed: ' + response.get('message'))
         logger.info(json.dumps(response) + "\n")
         return response
     except requests.JSONDecodeError as er:
-        ERROR_REQUEST_OPEN_WEATHER.inc()
-        end_time = time.time_ns()
-        DELTA_TIME.set(end_time-start_time)
         logger.error(f'JSON Decode error: {er}\n')
         raise SystemExit
     except requests.HTTPError as er:
-        ERROR_REQUEST_OPEN_WEATHER.inc()
-        end_time = time.time_ns()
-        DELTA_TIME.set(end_time-start_time)
         logger.error(f'HTTP Error: {er}\n')
         raise SystemExit
     except requests.exceptions.RequestException as er:
-        ERROR_REQUEST_OPEN_WEATHER.inc()
-        end_time = time.time_ns()
-        DELTA_TIME.set(end_time-start_time)
         logger.error(f'Request failed: {er}\n')
         raise SystemExit
     except Exception as er:
@@ -81,11 +57,8 @@ def make_query(query):
 # there is another key-value pair in the outer dictionary with key = "location" and value = array
 # that contains information about the location in common for all the entries to be entered into the DB
 def check_rules(db_cursor, api_response):
-    DBstart_time = time.time_ns()
     db_cursor.execute("SELECT rules FROM current_work WHERE worker_id = %s", (str(worker_id),))
     rules_list = db_cursor.fetchall()
-    DBend_time = time.time_ns()
-    QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
     event_dict = dict()
     for rules in rules_list:
         user_violated_rules_list = list()
@@ -147,7 +120,6 @@ def format_data(data):
 # function for recovering unchecked rules when worker goes down before publishing notification event
 def find_current_work():
     try:
-        DBstart_time = time.time_ns()
         with (mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'),
                                       user=os.environ.get('USER'), password=os.environ.get('PASSWORD'),
                                       database=os.environ.get('DATABASE')) as db_conn):
@@ -161,8 +133,6 @@ def find_current_work():
             db_cursor = db_conn.cursor(buffered=True)
             db_cursor.execute("SELECT rules FROM current_work WHERE worker_id = %s", (str(worker_id),))
             result = db_cursor.fetchone()
-            DBend_time = time.time_ns()
-            QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
             if result:
                 dict_row = json.loads(result[0])
                 # all entries in current_works are related to the same location
@@ -193,19 +163,15 @@ def delivery_callback(err, msg):
         logger.error('%% Message failed delivery: %s\n' % err)
         raise SystemExit("Exiting after error in delivery message to Kafka broker\n")
     else:
-        KAFKA_MESSAGE_DELIVERED.inc()
         logger.info('%% Message delivered to %s, partition[%d] @ %d\n' %
                     (msg.topic(), msg.partition(), msg.offset()))
         try:
-            DBstart_time = time.time_ns()
             with mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'),
                                          user=os.environ.get('USER'), password=os.environ.get('PASSWORD'),
                                          database=os.environ.get('DATABASE')) as mydb:
                 mycursor = mydb.cursor()
                 mycursor.execute("DELETE FROM current_work WHERE worker_id = %s", (str(worker_id),))
                 mydb.commit()  # to make changes effective
-                DBend_time = time.time_ns()
-                QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
         except mysql.connector.Error as err:
             logger.error("Exception raised!\n" + str(err))
             try:
@@ -219,7 +185,6 @@ def produce_kafka_message(topic_name, kafka_producer, message):
     # Publish on the specific topic
     try:
         kafka_producer.produce(topic_name, value=message, callback=delivery_callback)
-        KAFKA_MESSAGE.inc()
     except BufferError:
         logger.error(
             '%% Local producer queue is full (%d messages awaiting delivery): try again\n' % len(kafka_producer))
@@ -228,30 +193,6 @@ def produce_kafka_message(topic_name, kafka_producer, message):
     logger.error("Waiting for message to be delivered\n")
     kafka_producer.flush()
     return True
-
-
-def create_app():
-    app = Flask(__name__)
-
-    @app.route('/metrics')
-    def metrics():
-        # Export all the metrics as text for Prometheus
-        return Response(generate_latest(REGISTRY), mimetype='text/plain')
-
-    return app
-
-
-def serve_prometheus():
-    port = 50055
-    hostname = socket.gethostname()
-    logger.info(f'Hostname: {hostname} -> server starting on port {str(port)}')
-    app.run(host='0.0.0.0', port=port, threaded=True)
-
-
-worker_id = os.environ.get("WORKERID")
-
-# create Flask application
-app = create_app()
 
 
 if __name__ == "__main__":
@@ -268,11 +209,6 @@ if __name__ == "__main__":
 
     logger.info("ENV variables initialization done")
 
-    logger.info("Starting Prometheus serving thread!\n")
-    threadAPIGateway = threading.Thread(target=serve_prometheus)
-    threadAPIGateway.daemon = True
-    threadAPIGateway.start()
-
     # create table current_work if not exists.
     # This table will contain many entries but all relating to the same message from the WMS
     # and therefore all with the same location
@@ -283,7 +219,6 @@ if __name__ == "__main__":
     # the user is not interested but for which at least one other user is interested in.
     # In this second case, the actual value of the rule is "null"
     try:
-        DBstart_time = time.time_ns()
         with mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'),
                                      user=os.environ.get('USER'), password=os.environ.get('PASSWORD'),
                                      database=os.environ.get('DATABASE')) as mydb:
@@ -293,8 +228,6 @@ if __name__ == "__main__":
             mycursor.execute(
                 "CREATE TABLE IF NOT EXISTS current_work (id INTEGER PRIMARY KEY AUTO_INCREMENT, rules JSON NOT NULL, time_stamp TIMESTAMP NOT NULL, worker_id VARCHAR(60) NOT NULL, INDEX worker_ind (worker_id))")
             mydb.commit()  # to make changes effective
-            DBend_time = time.time_ns()
-            QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
     except mysql.connector.Error as err:
         logger.error("Exception raised! -> " + str(err) + "\n")
         try:
@@ -411,10 +344,7 @@ if __name__ == "__main__":
                                     temp_dict[key] = data.get(key)[i]
                             temp_dict['location'] = loc
                             json_to_insert = json.dumps(temp_dict)
-                            DBstart_time = time.time_ns()
                             mycursor.execute("INSERT INTO current_work (worker_id, rules, time_stamp) VALUES (%s, %s, CURRENT_TIMESTAMP())", (worker_id, json_to_insert))
-                            DBend_time = time.time_ns()
-                            QUERY_DURATIONS_HISTOGRAM.observe(DBend_time-DBstart_time)
                         mydb.commit()  # to make changes effective after inserting rules for ALL the users
                 except mysql.connector.Error as err:
                     logger.error("Exception raised! -> " + str(err) + "\n")
