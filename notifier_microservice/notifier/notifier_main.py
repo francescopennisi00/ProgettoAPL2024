@@ -16,6 +16,15 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+BOOTSTRAP_SERVER_KAFKA = 'kafka-service:9092'
+GROUP_ID = 'group1'
+TOPIC_NAME = "event_to_be_notified"
+TIMEOUT_POLL_REQUEST = 5.0
+ATTEMPTS = 5
+UM_ADDRESS = 'um-service:50051'
+SMTP_SERVER_NAME = 'smtp.gmail.com'
+SMTP_SERVER_PORT = 465
+
 
 def commit_completed(er, partitions):
     if er:
@@ -26,164 +35,299 @@ def commit_completed(er, partitions):
         logger.info("Notification fetched and stored in DB in order to be sent!\n")
 
 
-# communication with user management in order to get user email
-def fetch_email(userid):
-    try:
-        with grpc.insecure_channel('um-service:50051') as channel:
-            stub = notifier_um_pb2_grpc.NotifierUmStub(channel)
-            response = stub.RequestEmail(notifier_um_pb2.Request(user_id=userid))
-            logger.info("Fetched email: " + response.email + "\n")
-            email_to_return = response.email
-    except grpc.RpcError as error:
-        logger.error("gRPC error! -> " + str(error) + "\n")
-        email_to_return = "null"
-    return email_to_return
+class EmailSender:
+    def __init__(self, service_address, email_address, email_password):
+        self._gRPC_server_address = service_address
+        self._email_address = email_address
+        self._email_password = email_password
+
+    # communication with user manager in order to get user's email
+    def fetch_email_address(self, userid):
+        try:
+            with grpc.insecure_channel(self._gRPC_server_address) as channel:
+                stub = notifier_um_pb2_grpc.NotifierUmStub(channel)
+                response = stub.RequestEmail(notifier_um_pb2.Request(user_id=userid))
+                logger.info("Fetched email: " + response.email + "\n")
+                email_to_return = response.email
+        except grpc.RpcError as error:
+            logger.error("gRPC error! -> " + str(error) + "\n")
+            email_to_return = "null"
+        return email_to_return
+
+    @staticmethod
+    def _insert_rule_in_mail_text(rule, value, name_loc, country, state):
+        if rule == "max_temp" or rule == "min_temp":
+            return f"The temperature in {name_loc} ({country}, {state}) is {str(value)} °C!\n"
+        elif rule == "max_humidity" or rule == "min_humidity":
+            return f"The humidity in {name_loc} ({country}, {state}) is {str(value)} %!\n"
+        elif rule == "max_pressure" or rule == "min_pressure":
+            return f"The pressure in {name_loc} ({country}, {state}) is {str(value)} hPa!\n"
+        elif rule == "max_cloud" or rule == "min_cloud":
+            return f"The the percentage of sky covered by clouds in {name_loc} ({country}, {state}) is {str(value)} %\n"
+        elif rule == "max_wind_speed" or rule == "min_wind_speed":
+            return f"The wind speed in {name_loc} ({country}, {state}) is {str(value)} m/s!\n"
+        elif rule == "wind_direction":
+            return f"The wind direction in {name_loc} ({country}, {state}) is {value}!\n"
+        elif rule == "rain":
+            return f"Warning! In {name_loc} ({country}, {state}) is raining! Arm yourself with an umbrella!\n"
+        elif rule == "snow":
+            return f"Warning! In {name_loc} ({country}, {state}) is snowing! Be careful and enjoy the snow!\n"
+
+    # send notification by email
+    def send_email(self, recipient_email, violated_rules, name_location, country, state):
+        subject = "Weather Alert Notification! "
+        body = "Warning! Some weather parameters that you specified have been violated!\n\n"
+        rules_list = violated_rules.get("violated_rules")  # extracting list of key-value pairs of violated_rules
+        for element in rules_list:
+            if element:
+                rule = next(iter(element))
+                body += self._insert_rule_in_mail_text(rule, element[rule], name_location, country, state)
+        em = EmailMessage()
+        em['From'] = self._email_address
+        em['To'] = recipient_email
+        em['Subject'] = subject
+        em.set_content(body)
+        context = ssl.create_default_context()
+        try:
+            with smtplib.SMTP_SSL(SMTP_SERVER_NAME, SMTP_SERVER_PORT, context=context) as smtp:
+                smtp.login(self._email_address, self._email_password)
+                smtp.sendmail(self._email_address, recipient_email, em.as_string())
+                boolean_to_return = True
+        except smtplib.SMTPException as exception:
+            logger.error("SMTP protocol error! -> " + str(exception) + "\n")
+            boolean_to_return = False
+        return boolean_to_return
+
+
+class KafkaConsumer:
+
+    def __init__(self, bootstrap_servers, group_id, commit_completed_callback):
+        self._consumer = confluent_kafka.Consumer({
+            'bootstrap.servers': bootstrap_servers,
+            'group.id': group_id,
+            'enable.auto.commit': False,
+            'auto.offset.reset': 'latest',
+            'on_commit': commit_completed_callback
+        })
+
+    def start_subscription(self, topic):
+        try:
+            self._consumer.subscribe([topic])
+        except confluent_kafka.KafkaException as ke:
+            logger.error("Kafka exception raised! -> " + str(ke) + "\n")
+            self._consumer.close()
+            sys.exit("Terminate after Exception raised in Kafka topic subscribe\n")
+        except Exception as ke:
+            logger.error("Kafka exception raised! -> " + str(ke) + "\n")
+            self._consumer.close()
+            sys.exit("Terminate after general exception raised in Kafka subscription\n")
+
+    def poll_message(self):
+        return self._consumer.poll(timeout=TIMEOUT_POLL_REQUEST)
+
+    def commit_async(self):
+        try:
+            self._consumer.commit(asynchronous=True)
+        except Exception as e:
+            logger.error("Error in commit to Kafka broker! -> " + str(e) + "\n")
+            return False
+        return True
+
+    def close_consumer(self):
+        self._consumer.close()
+
+
+# implementing pattern Singleton for SecretInitializer class
+class SecretInitializer:
+
+    _instance = None  # starter value: no object initially instantiated
+
+    # if SecretInitializer object already instantiated, then return it without re-instantiating
+    def __new__(cls):
+        if not hasattr(cls, '_instance'):
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    # setting env variables for secrets
+    def init_secrets(self):
+        self._init_secret('PASSWORD')
+        self._init_secret('APP_PASSWORD')
+        self._init_secret('EMAIL')
+
+    @staticmethod
+    def _init_secret(env_var_name):
+        secret_path = os.environ.get(env_var_name)
+        with open(secret_path, 'r') as file:
+            secret_value = file.read()
+        os.environ[env_var_name] = secret_value
+        logger.info(f"Initialized {env_var_name}.\n")
+
+
+class DatabaseConnector:
+    def __init__(self, hostname, port, user, password, database):
+        try:
+            self._connection = mysql.connector.connect(
+                host=hostname,
+                port=port,
+                user=user,
+                password=password,
+                database=database
+            )
+        except mysql.connector.Error as err:
+            logger.error("MySQL Exception raised! -> " + str(err) + "\n")
+            raise SystemExit
+
+    def execute_query(self, query, params=None, select=True, commit=False):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(query, params)
+            if not select:
+                if commit:
+                    cursor.close()
+                    self.commit_update()  # to make changes effective
+                    return True
+                else:
+                    # in this case insert, delete or update query was executed but commit will be done later
+                    cursor.close()
+                    return True
+            else:
+                results = cursor.fetchall()
+                cursor.close()
+                return results
+        except mysql.connector.Error as err:
+            logger.error("MySQL Exception raised! -> " + str(err) + "\n")
+            return False
+
+    def commit_update(self):
+        try:
+            self._connection.commit()
+        except mysql.connector.Error as error:
+            logger.error("MySQL Exception raised! -> " + str(error) + "\n")
+            try:
+                self._connection.rollback()
+            except Exception as exe:
+                logger.error(f" MySQL Exception raised in rollback: {exe}\n")
+        raise SystemExit
+
+    def close(self):
+        try:
+            self._connection.close()
+        except mysql.connector.Error as error:
+            logger.error("MySQL Exception raised! -> " + str(error) + "\n")
+        raise SystemExit
 
 
 # connection with DB and update the entry of the notification sent
 def update_event_sent(event_id):
-    try:
-        with mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'),user=os.environ.get('USER'), password=os.environ.get('PASSWORD'), database=os.environ.get('DATABASE')) as db:
-            cursor = db.cursor()
-            cursor.execute("UPDATE events SET sent=TRUE, time_stamp=CURRENT_TIMESTAMP WHERE id = %s", (str(event_id),))
-            db.commit()
-            boolean_to_return = True
-    except mysql.connector.Error as error:
-        logger.error("Exception raised! -> " + str(error) + "\n")
-        boolean_to_return = False
-        try:
-            db.rollback()
-        except Exception as exc:
-            logger.error(f"Exception raised in rollback: {exc}\n")
-    return boolean_to_return
 
+    database_connector = DatabaseConnector(
+        hostname=os.environ.get("HOSTNAME"),
+        port=os.environ.get("PORT"),
+        user=os.environ.get("USER"),
+        password=os.environ.get("PASSWORD"),
+        database=os.environ.get("DATABASE")
+    )
 
-def insert_rule_in_mail_text(rule, value, name_loc, country, state):
-    if rule == "max_temp" or rule == "min_temp":
-        return f"The temperature in {name_loc} ({country}, {state}) is {str(value)} °C!\n"
-    elif rule == "max_humidity" or rule == "min_humidity":
-        return f"The humidity in {name_loc} ({country}, {state}) is {str(value)} %!\n"
-    elif rule == "max_pressure" or rule == "min_pressure":
-        return f"The pressure in {name_loc} ({country}, {state}) is {str(value)} hPa!\n"
-    elif rule == "max_cloud" or rule == "min_cloud":
-        return f"The the percentage of sky covered by clouds in {name_loc} ({country}, {state}) is {str(value)} %\n"
-    elif rule == "max_wind_speed" or rule == "min_wind_speed":
-        return f"The wind speed in {name_loc} ({country}, {state}) is {str(value)} m/s!\n"
-    elif rule == "wind_direction":
-        return f"The wind direction in {name_loc} ({country}, {state}) is {value}!\n"
-    elif rule == "rain":
-        return f"Warning! In {name_loc} ({country}, {state}) is raining! Arm yourself with an umbrella!\n"
-    elif rule == "snow":
-        return f"Warning! In {name_loc} ({country}, {state}) is snowing! Be careful and enjoy the snow!\n"
-
-
-# send notification by email
-def send_email(email, violated_rules, name_location, country, state):
-    email_sender = os.environ.get('EMAIL')
-    email_password = os.environ.get('APP_PASSWORD')
-    email_receiver = email
-    subject = "Weather Alert Notification! "
-    body = "Warning! Some weather parameters that you specified have been violated!\n\n"
-    rules_list = violated_rules.get("violated_rules")  # extracting list of key-value pairs of violated_rules
-    for element in rules_list:
-        if element:
-            rule = next(iter(element))
-            body += insert_rule_in_mail_text(rule, element[rule], name_location, country, state)
-    em = EmailMessage()
-    em['From'] = email_sender
-    em['To'] = email_receiver
-    em['Subject'] = subject
-    em.set_content(body)
-    context = ssl.create_default_context()
-    try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
-            smtp.login(email_sender, email_password)
-            smtp.sendmail(email_sender, email_receiver, em.as_string())
-            boolean_to_return = True
-    except smtplib.SMTPException as exception:
-        logger.error("SMTP protocol error! -> " + str(exception) + "\n")
-        boolean_to_return = False
-    return boolean_to_return
+    outcome = database_connector.execute_query(
+        query="UPDATE events SET sent=TRUE, time_stamp=CURRENT_TIMESTAMP WHERE id = %s",
+        params=(str(event_id),),
+        commit=True,
+        select=False
+    )
+    if not outcome:
+        return False
+    return True
 
 
 # find events to send, send them by email and update events in DB
 def find_event_not_sent():
-    try:
-        db = mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'), user=os.environ.get('USER'), password=os.environ.get('PASSWORD'), database=os.environ.get('DATABASE'))
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM events WHERE sent=FALSE AND notifier_id=%s", (notifier_id,))
-        results = cursor.fetchall()
+
+    database_connector = DatabaseConnector(
+        hostname=os.environ.get("HOSTNAME"),
+        port=os.environ.get("PORT"),
+        user=os.environ.get("USER"),
+        password=os.environ.get("PASSWORD"),
+        database=os.environ.get("DATABASE")
+    )
+
+    # instantiating EmailSender instance in order to allow for sending emails
+    email_sender = EmailSender(
+        service_address=UM_ADDRESS,
+        email_address=os.environ.get('EMAIL'),
+        email_password=os.environ.get('APP_PASSWORD')
+    )
+
+    results = database_connector.execute_query("SELECT * FROM events WHERE sent=FALSE")
+    if results:
         for x in results:
-            email = fetch_email(x[1])
+            email = email_sender.fetch_email_address(x[1])
             if email == "null":
-                cursor.close()
-                db.close()
+                database_connector.close()
                 return False
             if email == "not present anymore":
-                cursor.execute("DELETE FROM events WHERE id=%s", (x[0], ))
-                db.commit()
-                continue
+                boolean = database_connector.execute_query(
+                    query="DELETE FROM events WHERE id=%s",
+                    params=(x[0], ),
+                    commit=True,
+                    select=False
+                )
+                if boolean:
+                    continue
+                else:
+                    raise SystemExit
             loc_name = x[2]
             loc_country = x[3]
             loc_state = x[4]
-            violated_rules = json.loads(x[5])
-            res = send_email(email, violated_rules, loc_name, loc_country, loc_state)
-            if res != True:
-                cursor.close()
-                db.close()
+            rules_violated = json.loads(x[5])
+            res = email_sender.send_email(email, rules_violated, loc_name, loc_country, loc_state)
+            if not res:
+                database_connector.close()
                 return "error_in_send_email"
             # we give 5 attempts to try to update the DB in order
             # to avoid resending the email as much as possible
-            for t in range(5):
-                if update_event_sent(x[0]) == True:
+            for attempt in range(ATTEMPTS):
+                if update_event_sent(x[0]):
                     break
                 time.sleep(1)
             else:
                 raise SystemExit
 
-    except mysql.connector.Error as error:
-        logger.error("Exception raised! -> " + str(error) +"\n")
-        try:
-            mydb.rollback()
-        except Exception as exe:
-            logger.error(f"Exception raised in rollback: {exe}\n")
-        raise SystemExit
-
 
 if __name__ == "__main__":
 
     logger.info("Start notifier main")
-
-    # setting env variables for secrets
-    secret_password_path = os.environ.get('PASSWORD')
-    with open(secret_password_path, 'r') as file:
-        secret_password_value = file.read()
-    os.environ['PASSWORD'] = secret_password_value
-    secret_app_password_path = os.environ.get('APP_PASSWORD')
-    with open(secret_app_password_path, 'r') as file:
-        secret_app_password_value = file.read()
-    os.environ['APP_PASSWORD'] = secret_app_password_value
-    secret_email_path = os.environ.get('EMAIL')
-    with open(secret_email_path, 'r') as file:
-        secret_email_value = file.read()
-    os.environ['EMAIL'] = secret_email_value
-
+    secret_initializer = SecretInitializer()
+    secret_initializer.init_secrets()
     logger.info("ENV variables initialization done")
 
-    # start Kafka subscription
-    c = confluent_kafka.Consumer({'bootstrap.servers':'kafka-service:9092', 'group.id':'group1', 'enable.auto.commit':'false', 'auto.offset.reset':'latest', 'on_commit':commit_completed})
-    try:
-        broker = 'kafka:9092'
-        topic = 'event_to_be_notified'
-        c.subscribe(['event_to_be_notified'])
-    except confluent_kafka.KafkaException as ke:
-        logger.error("Kafka exception raised! -> " + str(ke) + "\n")
-        c.close()
-        sys.exit("Terminate after Exception raised in Kafka topic subscribe\n")
-    except Exception as ke:
-        logger.error("Kafka exception raised! -> " + str(ke) + "\n")
-        c.close()
-        sys.exit("Terminate after GENERAL Exception raised in Kafka subscription\n")
+    # instantiating MySQL DB Connector instance in order to crate table 'events' if not exists
+    db_connector = DatabaseConnector(
+        hostname=os.environ.get("HOSTNAME"),
+        port=os.environ.get("PORT"),
+        user=os.environ.get("USER"),
+        password=os.environ.get("PASSWORD"),
+        database=os.environ.get("DATABASE")
+    )
+
+    bool_outcome = db_connector.execute_query(
+        query="CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTO_INCREMENT, user_id INTEGER NOT NULL, location_name VARCHAR(70) NOT NULL, location_country VARCHAR(10) NOT NULL, location_state VARCHAR(30) NOT NULL, rules JSON NOT NULL, time_stamp TIMESTAMP NOT NULL, sent BOOLEAN NOT NULL)",
+        commit=True,
+        select=False
+    )
+    if not bool_outcome:
+        sys.exit()
+
+    db_connector.close()
+
+    # instantiating Kafka consumer instance
+    kafka_consumer = KafkaConsumer(
+        bootstrap_servers=BOOTSTRAP_SERVER_KAFKA,
+        group_id=GROUP_ID,
+        commit_completed_callback=commit_completed
+    )
+
+    # start Kafka subscription in order to retrieve messages written by Worker on broker
+    kafka_consumer.start_subscription(TOPIC_NAME)
 
     logger.info("Starting while true\n")
 
@@ -192,26 +336,13 @@ if __name__ == "__main__":
 
             logger.info("New iteration!\n")
 
-            # Creating table if not exits
-            try:
-                with mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'), user=os.environ.get('USER'), password=os.environ.get('PASSWORD'), database=os.environ.get('DATABASE')) as mydb:
-                    mycursor = mydb.cursor()
-                    mycursor.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTO_INCREMENT, user_id INTEGER NOT NULL, location_name VARCHAR(70) NOT NULL, location_country VARCHAR(10) NOT NULL, location_state VARCHAR(30) NOT NULL, rules JSON NOT NULL, time_stamp TIMESTAMP NOT NULL, sent BOOLEAN NOT NULL, notifier_id VARCHAR(60) NOT NULL, INDEX notifier_ind (notifier_id))")
-                    mydb.commit()  # to make changes effective
-            except mysql.connector.Error as err:
-                logger.error("Exception raised! -> " + str(err) +"\n")
-                try:
-                    mydb.rollback()
-                except Exception as excep:
-                    logger.error(f"Exception raised in rollback: {excep}\n")
-                raise SystemExit
-
             # Looking for entries that have sent == False
             result = find_event_not_sent()
             if result == "error_in_send_email":
                 continue
 
-            msg = c.poll(timeout=5.0)
+            msg = kafka_consumer.poll_message()
+
             if msg is None:
                 # No message available within timeout.
                 # Initial message consumption may take up to
@@ -224,6 +355,7 @@ if __name__ == "__main__":
                 if msg.error().code() == confluent_kafka.KafkaError.UNKNOWN_TOPIC_OR_PART:
                     raise SystemExit
             else:
+
                 # Check for Kafka message
                 record_key = msg.key()
                 logger.info("RECORD KEY " + str(record_key))
@@ -233,38 +365,43 @@ if __name__ == "__main__":
                 location_name = data.get("location")[0]
                 location_country = data.get("location")[3]
                 location_state = data.get("location")[4]
-                del data["location"]
-                worker_timestamp = data.get("timestamp")  # Kafka msg has a key-value pair with worker publish timestamp: important for latency of notification metric
-                del data["timestamp"]  # now all the keys of data are user_ids
+                del data["location"]  # now all key-value pairs have user_id value as key
                 user_id_set = set(data.keys())
-                # connection with DB and store events to be notified
-                try:
-                    with mysql.connector.connect(host=os.environ.get('HOSTNAME'), port=os.environ.get('PORT'), user=os.environ.get('USER'), password=os.environ.get('PASSWORD'), database=os.environ.get('DATABASE')) as mydb:
-                        mycursor = mydb.cursor()
-                        for user_id in user_id_set:
-                            temp_dict = dict()
-                            temp_dict["violated_rules"] = data.get(user_id)
-                            temp_dict["timestamp_worker"] = worker_timestamp
-                            violated_rules = json.dumps(temp_dict)
-                            mycursor.execute("INSERT INTO events (user_id, location_name, location_country, location_state, rules, time_stamp, sent, notifier_id) VALUES(%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, FALSE, %s)", (str(user_id), location_name, location_country, location_state, violated_rules, notifier_id))
-                        mydb.commit()  # to make changes effective after inserting ALL the violated_rules
-                except mysql.connector.Error as err:
-                    logger.error("Exception raised! -> " + str(err) + "\n")
-                    try:
-                        mydb.rollback()
-                    except Exception as exe:
-                        logger.error(f"Exception raised in rollback: {exe}\n")
-                    raise SystemExit  # to terminate without Kafka commit
 
-                # make commit
-                try:
-                    c.commit(asynchronous=True)
-                except Exception as e:
-                    logger.error("Error in commit! -> " + str(e) + "\n")
+                # connection with DB and store events to be notified
+
+                db = DatabaseConnector(
+                    hostname=os.environ.get("HOSTNAME"),
+                    port=os.environ.get("PORT"),
+                    user=os.environ.get("USER"),
+                    password=os.environ.get("PASSWORD"),
+                    database=os.environ.get("DATABASE")
+                )
+                for user_id in user_id_set:
+                    temp_dict = dict()
+                    temp_dict["violated_rules"] = data.get(user_id)
+                    violated_rules = json.dumps(temp_dict)
+                    bool_result = db.execute_query(
+                        query="INSERT INTO events (user_id, location_name, location_country, location_state, rules, time_stamp, sent) VALUES(%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, FALSE)",
+                        params=(str(user_id), location_name, location_country, location_state, violated_rules),
+                        commit=True,
+                        select=False)
+                    if not bool_result:
+                        raise SystemExit
+                db.commit_update()  # to make changes effective after inserting ALL the violated_rules
+
+                # make commit to Kafka broker after Kafka msg has been stored in DB
+                # we give some attempts to retrying commit in order to avoid replication of the same email
+                for t in range(ATTEMPTS):
+                    if kafka_consumer.commit_async():
+                        break
+                    time.sleep(1)
+                else:
+                    logger.error("Exhausted attempts to commit to Kafka broker!\n")
                     raise SystemExit
 
     except (KeyboardInterrupt, SystemExit):  # to terminate correctly with either CTRL+C or docker stop
         pass
     finally:
         # Leave group and commit final offsets
-        c.close()
+        kafka_consumer.close_consumer()
