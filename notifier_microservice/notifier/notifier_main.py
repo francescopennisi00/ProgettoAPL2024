@@ -388,7 +388,7 @@ if __name__ == "__main__":
                     bool_result = db.execute_query(
                         query="INSERT INTO events (user_id, location_name, location_country, location_state, rules, time_stamp, sent) VALUES(%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, FALSE)",
                         params=(str(user_id), location_name, location_country, location_state, violated_rules),
-                        commit=True,
+                        commit=False,
                         select=False)
                     if not bool_result:
                         raise SystemExit
