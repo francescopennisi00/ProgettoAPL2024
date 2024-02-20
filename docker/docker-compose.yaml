@@ -73,7 +73,7 @@ services:
   notifier_service:
     container_name: notifier-service
     build:
-      context: ../notifier_service
+      context: ../notifier_microservice
       dockerfile: Dockerfile
     image: notifier_service_image:base
     expose:
@@ -117,7 +117,7 @@ services:
   um_service:
     container_name: um-service
     build:
-      context: ../user_manager_service
+      context: ../user_manager_microservice
       dockerfile: Dockerfile
     image: user_manager_service_image:base
     depends_on:
@@ -157,7 +157,7 @@ services:
   worker_service:
     container_name: worker-service
     build:
-      context: ../worker_service
+      context: ../worker_microservice
       dockerfile: Dockerfile
     image: worker_service_image:base
     expose:
@@ -199,7 +199,7 @@ services:
   wms_service:
     container_name: wms-service
     build:
-      context: ../WMS_service
+      context: ../WMS_microservice
       dockerfile: Dockerfile
     image: wms_service_image:base
     depends_on:

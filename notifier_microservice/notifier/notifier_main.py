@@ -144,7 +144,7 @@ class SecretInitializer:
 
     # if SecretInitializer object already instantiated, then return it without re-instantiating
     def __new__(cls):
-        if not hasattr(cls, '_instance'):
+        if not cls._instance:
             cls._instance = super().__new__(cls)
         return cls._instance
 

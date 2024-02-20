@@ -112,10 +112,13 @@ class KafkaProducer:
         found = False
         for name in topic_names:
             if name == topic_name:
+                logger.info(f"TOPIC {topic_name} FOUND\n")
                 found = True
         if not found:
+            logger.info(f"TOPIC {topic_name} NOT FOUND: CREATING IT\n")
             new_topic = NewTopic(topic_name, 1, 1)  # Number-of-partitions = 1, Number-of-replicas = 1
             kadmin.create_topics([new_topic,])
+            logger.info("TOPIC CREATION STARTED!\n")
 
     @staticmethod
     # Optional per-message delivery callback (triggered by poll() or flush())
@@ -199,7 +202,7 @@ class SecretInitializer:
 
     # if SecretInitializer object already instantiated, then return it without re-instantiating
     def __new__(cls):
-        if not hasattr(cls, '_instance'):
+        if not cls._instance:
             cls._instance = super().__new__(cls)
         return cls._instance
 
@@ -224,7 +227,7 @@ class RESTQuerier:
 
     # if RESTQuerier object is already instantiated, then return it without re-instantiating
     def __new__(cls):
-        if not hasattr(cls, '_querier_instance'):
+        if not cls._querier_instance:
             cls._instance = super().__new__(cls)
         return cls._querier_instance
 
