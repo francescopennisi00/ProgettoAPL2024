@@ -1,1 +1,3 @@
 ./.idea
+./notifier_microservice/venv_notifier_microservice
+./worker_microservice/venv_worker_microservice

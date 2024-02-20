@@ -26,15 +26,6 @@ SMTP_SERVER_NAME = 'smtp.gmail.com'
 SMTP_SERVER_PORT = 465
 
 
-def commit_completed(er, partitions):
-    if er:
-        logger.error(str(er))
-    else:
-        logger.info("Commit done!\n")
-        logger.info("Committed partition offsets: " + str(partitions) + "\n")
-        logger.info("Notification fetched and stored in DB in order to be sent!\n")
-
-
 class EmailSender:
     def __init__(self, service_address, email_address, email_password):
         self._gRPC_server_address = service_address
@@ -101,14 +92,23 @@ class EmailSender:
 
 class KafkaConsumer:
 
-    def __init__(self, bootstrap_servers, group_id, commit_completed_callback):
+    def __init__(self, bootstrap_servers, group_id):
         self._consumer = confluent_kafka.Consumer({
             'bootstrap.servers': bootstrap_servers,
             'group.id': group_id,
             'enable.auto.commit': False,
             'auto.offset.reset': 'latest',
-            'on_commit': commit_completed_callback
+            'on_commit': KafkaConsumer.__commit_completed
         })
+
+    @staticmethod
+    def __commit_completed(er, partitions):
+        if er:
+            logger.error(str(er))
+        else:
+            logger.info("Commit done!\n")
+            logger.info("Committed partition offsets: " + str(partitions) + "\n")
+            logger.info("Rules fetched and stored in DB in order to save current work!\n")
 
     def start_subscription(self, topic):
         try:
@@ -331,8 +331,7 @@ if __name__ == "__main__":
     # instantiating Kafka consumer instance
     kafka_consumer = KafkaConsumer(
         bootstrap_servers=BOOTSTRAP_SERVER_KAFKA,
-        group_id=GROUP_ID,
-        commit_completed_callback=commit_completed
+        group_id=GROUP_ID
     )
 
     # start Kafka subscription in order to retrieve messages written by Worker on broker

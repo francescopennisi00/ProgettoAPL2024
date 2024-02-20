@@ -22,15 +22,6 @@ ATTEMPTS = 5
 ENDPOINT_REST_OPEN_WEATHER = f"https://api.openweathermap.org/data/2.5/weather?lat=LATITUDE&lon=LONGITUDE&units=metric&appid=APIKEY"
 
 
-def commit_completed(er, partitions):
-    if er:
-        logger.error(str(er))
-    else:
-        logger.info("Commit done!\n")
-        logger.info("Committed partition offsets: " + str(partitions) + "\n")
-        logger.info("Rules fetched and stored in DB in order to save current work!\n")
-
-
 class DatabaseConnector:
     def __init__(self, hostname, port, user, password, database):
         try:
@@ -146,7 +137,7 @@ class KafkaProducer:
     def produce_kafka_message(self, topic_name, kafka_broker, message):
         # Publish on the specific topic
         try:
-            self._producer.produce(topic_name, value=message, callback=self.__delivery_callback)
+            self._producer.produce(topic_name, value=message, callback=KafkaProducer.__delivery_callback)
         except BufferError:
             logger.error(
                 '%% Local producer queue is full (%d messages awaiting delivery): try again\n' % len(kafka_broker))
@@ -159,14 +150,23 @@ class KafkaProducer:
 
 class KafkaConsumer:
 
-    def __init__(self, bootstrap_servers, group_id, commit_completed_callback):
+    def __init__(self, bootstrap_servers, group_id):
         self._consumer = confluent_kafka.Consumer({
             'bootstrap.servers': bootstrap_servers,
             'group.id': group_id,
             'enable.auto.commit': False,
             'auto.offset.reset': 'latest',
-            'on_commit': commit_completed_callback
+            'on_commit': KafkaConsumer.__commit_completed
         })
+
+    @staticmethod
+    def __commit_completed(er, partitions):
+        if er:
+            logger.error(str(er))
+        else:
+            logger.info("Commit done!\n")
+            logger.info("Committed partition offsets: " + str(partitions) + "\n")
+            logger.info("Rules fetched and stored in DB in order to save current work!\n")
 
     def start_subscription(self, topic):
         try:
@@ -296,25 +296,25 @@ class RESTQuerier:
 # there is another key-value pair in the outer dictionary with key = "location" and value = array
 # that contains information about the location in common for all the entries to be entered into the DB
 def check_rules(api_response, db_connect):
-    def check_max(key, api_response, rules_json, temp_dict):
-        if api_response.get(key) > rules_json.get(key):
-            temp_dict[key] = api_response.get(key)
+    def check_max(key, actual_value, target_value, temp_dict):
+        if actual_value > target_value:
+            temp_dict[key] = actual_value
 
-    def check_min(key, api_response, rules_json, temp_dict):
-        if api_response.get(key) < rules_json.get(key):
-            temp_dict[key] = api_response.get(key)
+    def check_min(key, actual_value, target_value, temp_dict):
+        if actual_value < target_value:
+            temp_dict[key] = actual_value
 
-    def check_rain(key, api_response, rules_json, temp_dict):
-        if api_response.get("rain") is True:
-            temp_dict[key] = api_response.get(key)
+    def check_rain(key, actual_value, target_value, temp_dict):
+        if actual_value is True:
+            temp_dict[key] = actual_value
 
-    def check_snow(key, api_response, rules_json, temp_dict):
-        if api_response.get("snow") is True:
-            temp_dict[key] = api_response.get(key)
+    def check_snow(key, actual_value, target_value, temp_dict):
+        if actual_value is True:
+            temp_dict[key] = actual_value
 
-    def check_wind_direction(key, api_response, rules_json, temp_dict):
-        if rules_json.get(key) == api_response.get(key):
-            temp_dict[key] = api_response.get(key)
+    def check_wind_direction(key, actual_value, target_value, temp_dict):
+        if target_value == actual_value:
+            temp_dict[key] = actual_value
 
     # Function's dict
     check_functions = {
@@ -338,7 +338,7 @@ def check_rules(api_response, db_connect):
                 if rules_json.get(key) != "null":
                     for prefix in check_functions_keys:
                         if prefix in key:
-                            check_functions[prefix](key, api_response, rules_json, temp_dict)
+                            check_functions[prefix](key, api_response.get(key), rules_json.get(key), temp_dict)
                             break
                 user_violated_rules_list.append(temp_dict)
             event_dict[rules_json.get("user_id")] = user_violated_rules_list
@@ -423,8 +423,7 @@ if __name__ == "__main__":
     # instantiating Kafka consumer instance
     kafka_consumer = KafkaConsumer(
         bootstrap_servers=BOOTSTRAP_SERVER_KAFKA,
-        group_id=GROUP_ID,
-        commit_completed_callback=commit_completed
+        group_id=GROUP_ID
     )
 
     # start Kafka subscription in order to retrieve messages written by Worker on broker
@@ -439,7 +438,7 @@ if __name__ == "__main__":
 
             # call to find_current_work and publish them in topic "event_to_be_sent"
             current_work = find_current_work()
-            if current_work != '{}' and current_work != False:  # {} is the JSON representation of an empty dictionary.
+            if current_work != '{}' and current_work is not False:  # {} is the JSON representation of an empty dictionary.
                 while not kafka_producer.produce_kafka_message(PUBLICATION_TOPIC_NAME, BOOTSTRAP_SERVER_KAFKA, current_work):
                     pass
             else:
@@ -500,15 +499,15 @@ if __name__ == "__main__":
                 for i in range(0, len(userId_list)):
                     temp_dict = dict()
                     for key in set(data.keys()):
-                        if key != "location" and key != "rows_id":  # TODO: rows_id? Maybe to be removed
+                        if key != "location":
                             temp_dict[key] = data.get(key)[i]
                     temp_dict['location'] = loc
                     json_to_insert = json.dumps(temp_dict)
                     if not db.execute_query(
                         query="INSERT INTO current_work (rules, time_stamp) VALUES (%s, CURRENT_TIMESTAMP())",
-                        params= (json_to_insert, ),
+                        params=(json_to_insert, ),
                         commit=False,
-                        select=True
+                        select=False
                     ):
                         raise SystemExit
                 if not db.commit_update():  # to make changes effective after inserting ALL the violated_rules
