@@ -1,4 +1,3 @@
-import confluent_kafka
 import json
 import os
 import time
@@ -7,79 +6,8 @@ from utils.logger import logger
 import utils.constants as constants
 from classes.database_connector import DatabaseConnector
 from classes.email_sender import EmailSender
-
-
-class KafkaConsumer:
-
-    def __init__(self, bootstrap_servers, group_id):
-        self._consumer = confluent_kafka.Consumer({
-            'bootstrap.servers': bootstrap_servers,
-            'group.id': group_id,
-            'enable.auto.commit': False,
-            'auto.offset.reset': 'latest',
-            'on_commit': KafkaConsumer.__commit_completed
-        })
-
-    @staticmethod
-    def __commit_completed(er, partitions):
-        if er:
-            logger.error(str(er))
-        else:
-            logger.info("Commit done!\n")
-            logger.info("Committed partition offsets: " + str(partitions) + "\n")
-            logger.info("Rules fetched and stored in DB in order to save current work!\n")
-
-    def start_subscription(self, topic):
-        try:
-            self._consumer.subscribe([topic])
-        except confluent_kafka.KafkaException as ke:
-            logger.error("Kafka exception raised! -> " + str(ke) + "\n")
-            self._consumer.close()
-            sys.exit("Terminate after Exception raised in Kafka topic subscribe\n")
-        except Exception as ke:
-            logger.error("Kafka exception raised! -> " + str(ke) + "\n")
-            self._consumer.close()
-            sys.exit("Terminate after general exception raised in Kafka subscription\n")
-
-    def poll_message(self):
-        return self._consumer.poll(timeout=constants.TIMEOUT_POLL_REQUEST)
-
-    def commit_async(self):
-        try:
-            self._consumer.commit(asynchronous=True)
-        except Exception as e:
-            logger.error("Error in commit to Kafka broker! -> " + str(e) + "\n")
-            return False
-        return True
-
-    def close_consumer(self):
-        self._consumer.close()
-
-
-# implementing pattern Singleton for SecretInitializer class
-class SecretInitializer:
-
-    _instance = None  # starter value: no object initially instantiated
-
-    # if SecretInitializer object already instantiated, then return it without re-instantiating
-    def __new__(cls):
-        if not cls._instance:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    # setting env variables for secrets
-    def init_secrets(self):
-        self.__init_secret('PASSWORD')
-        self.__init_secret('APP_PASSWORD')
-        self.__init_secret('EMAIL')
-
-    @staticmethod
-    def __init_secret(env_var_name):
-        secret_path = os.environ.get(env_var_name)
-        with open(secret_path, 'r') as file:
-            secret_value = file.read()
-        os.environ[env_var_name] = secret_value
-        logger.info(f"Initialized {env_var_name}.\n")
+from classes.secrets_initializer import SecretInitializer
+from classes.kafka_consumer import KafkaConsumer
 
 
 # connection with DB and update the entry of the notification sent
@@ -219,10 +147,12 @@ if __name__ == "__main__":
                 # rebalance and start consuming
                 logger.info("Waiting for message or event/error in poll()\n")
                 continue
+
             elif msg.error():
                 logger.info('error: {}\n'.format(msg.error()))
-                if msg.error().code() == confluent_kafka.KafkaError.UNKNOWN_TOPIC_OR_PART:
-                    raise SystemExit
+                if KafkaConsumer.topic_not_found(msg):
+                    raise SystemExit("Exiting because topic was not found!")
+
             else:
 
                 # Check for Kafka message
