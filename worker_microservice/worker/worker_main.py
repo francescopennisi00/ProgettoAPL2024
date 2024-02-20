@@ -48,6 +48,12 @@ def check_rules(api_response, db_connect):
     }
 
     rules_list = db_connect.execute_query("SELECT rules FROM current_work")
+    if not db_connect.close():
+        logger.error("Error in DB connection close!\n")
+        return False
+    if rules_list is False:
+        logger.error("Error in DB query execution!\n")
+        return False
     if rules_list:
         event_dict = dict()
         check_functions_keys = check_functions.keys()
