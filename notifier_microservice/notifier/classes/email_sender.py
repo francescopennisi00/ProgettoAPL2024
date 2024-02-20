@@ -29,22 +29,23 @@ class EmailSender:
 
     @staticmethod
     def __insert_rule_in_mail_text(rule, value, name_loc, country, state):
-        if rule == "max_temp" or rule == "min_temp":
-            return f"The temperature in {name_loc} ({country}, {state}) is {str(value)} °C!\n"
-        elif rule == "max_humidity" or rule == "min_humidity":
-            return f"The humidity in {name_loc} ({country}, {state}) is {str(value)} %!\n"
-        elif rule == "max_pressure" or rule == "min_pressure":
-            return f"The pressure in {name_loc} ({country}, {state}) is {str(value)} hPa!\n"
-        elif rule == "max_cloud" or rule == "min_cloud":
-            return f"The the percentage of sky covered by clouds in {name_loc} ({country}, {state}) is {str(value)} %\n"
-        elif rule == "max_wind_speed" or rule == "min_wind_speed":
-            return f"The wind speed in {name_loc} ({country}, {state}) is {str(value)} m/s!\n"
-        elif rule == "wind_direction":
-            return f"The wind direction in {name_loc} ({country}, {state}) is {value}!\n"
-        elif rule == "rain":
-            return f"Warning! In {name_loc} ({country}, {state}) is raining! Arm yourself with an umbrella!\n"
-        elif rule == "snow":
-            return f"Warning! In {name_loc} ({country}, {state}) is snowing! Be careful and enjoy the snow!\n"
+        match rule:
+            case "max_temp" | "min_temp":
+                return f"The temperature in {name_loc} ({country}, {state}) is {str(value)} °C!\n"
+            case "max_humidity" | "min_humidity":
+                return f"The humidity in {name_loc} ({country}, {state}) is {str(value)} %!\n"
+            case "max_pressure" | "min_pressure":
+                return f"The pressure in {name_loc} ({country}, {state}) is {str(value)} hPa!\n"
+            case "max_cloud" | "min_cloud":
+                return f"The the percentage of sky covered by clouds in {name_loc} ({country}, {state}) is {str(value)} %\n"
+            case "max_wind_speed" | "min_wind_speed":
+                return f"The wind speed in {name_loc} ({country}, {state}) is {str(value)} m/s!\n"
+            case "wind_direction":
+                return f"The wind direction in {name_loc} ({country}, {state}) is {value}!\n"
+            case "rain":
+                return f"Warning! In {name_loc} ({country}, {state}) is raining! Arm yourself with an umbrella!\n"
+            case "snow":
+                return f"Warning! In {name_loc} ({country}, {state}) is snowing! Be careful and enjoy the snow!\n"
 
     # send notification by email
     def send_email(self, recipient_email, violated_rules, name_location, country, state):
