@@ -8,6 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY notifier_um_pb2.py .
 COPY notifier_um_pb2.pyi .
 COPY notifier_um_pb2_grpc.py .
-COPY notifier/notifier_main.py .
+COPY notifier .
 
 CMD [ "python", "notifier_main.py" ]
