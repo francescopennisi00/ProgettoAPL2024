@@ -16,8 +16,7 @@ class SecretInitializer:
     # setting env variables for secrets
     def init_secrets(self):
         self.__init_secret('PASSWORD')
-        self.__init_secret('APP_PASSWORD')
-        self.__init_secret('EMAIL')
+        self.__init_secret('APIKEY')
 
     @staticmethod
     def __init_secret(env_var_name):
