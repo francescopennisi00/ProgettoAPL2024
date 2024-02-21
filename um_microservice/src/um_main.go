@@ -27,7 +27,7 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 
 	var dbConn types.DatabaseConnector
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	db, err := dbConn.StartDBConnection(dataSource)
+	_, err := dbConn.StartDBConnection(dataSource)
 	defer func(database *types.DatabaseConnector) {
 		err := database.CloseConnection()
 		if err != nil {
@@ -38,26 +38,31 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 		return &pb.Reply{Email: "null"}, nil
 	}
 
-	//TODO: replace following code with call to DatabaseConnector's method
-	row := db.QueryRow("SELECT email FROM users WHERE id=?", int(in.UserId))
-	var email string
-	err = row.Scan(&email)
+	outcome, _, row, _, err := dbConn.ExecuteQuery("SELECT email FROM users WHERE id=?", true, true, int(in.UserId))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.SetPrefix("[INFO] ")
-			log.Printf("Email %s not present anymore: %v\n", email, err)
+			log.Printf("Email not present anymore")
 			return &pb.Reply{Email: "not present anymore"}, nil
 		} else {
 			log.SetPrefix("[ERROR] ")
-			log.Printf("Error scanning row: %v\n", err)
+			log.Printf("DB Error: %v\n", err)
 			return &pb.Reply{Email: "null"}, err
 		}
 	} else {
-		log.SetPrefix("[INFO] ")
-		log.Printf("Returning email %s\n to Notifier", email)
+		if outcome == false {
+			log.SetPrefix("[ERROR]")
+			log.Println("DB connection already closed!")
+		}
+		var email string
+		err := row.Scan(&email)
+		if err != nil {
+			log.SetPrefix("[ERROR]")
+			log.Println("Error in DB Scanning email")
+			return nil, err
+		}
 		return &pb.Reply{Email: email}, nil
 	}
-
 }
 
 func serveNotifier() {

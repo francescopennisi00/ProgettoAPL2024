@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
-	"os"
 )
 
 type DatabaseConnector struct {
@@ -23,26 +22,52 @@ func (database *DatabaseConnector) StartDBConnection(dataSource string) (*sql.DB
 }
 
 func (database *DatabaseConnector) CloseConnection() error {
-	err := database.dbConn.Close()
-	if err != nil {
-		log.SetPrefix("[ERROR]")
-		log.Printf("DB connection closing error: %v", err)
-		return err
+	if database.dbConn != nil {
+		err := database.dbConn.Close()
+		if err != nil {
+			log.SetPrefix("[ERROR]")
+			log.Printf("DB connection closing error: %v", err)
+			return err
+		} else {
+			return nil
+		}
 	}
+	database.dbConn = nil
 	return nil
 }
 
-func (database *DatabaseConnector) ExecuteQuery(envVarName string) {
+func (database *DatabaseConnector) ExecuteQuery(query string, fetchOne bool, selectQ bool, params ...any) (booleanOutcome bool, result sql.Result, row *sql.Row, rows *sql.Rows, resErr error) {
 
-	//TODO: replace following code with implementation
-	secretPath := os.Getenv(envVarName)
-	secretValue, err := os.ReadFile(secretPath)
-	if err != nil {
-		log.Fatalf("Error reading secret file for %s: %v", envVarName, err)
+	if database.dbConn != nil {
+		if selectQ == true {
+			if fetchOne == true {
+				row := database.dbConn.QueryRow(query, params)
+				var scanVariable sql.Row
+				err := row.Scan(scanVariable)
+				if err != nil {
+					return false, result, &scanVariable, rows, err
+				}
+			} else {
+				res, err := database.dbConn.Query(query, params)
+				if err != nil {
+					return false, result, row, rows, err
+				}
+				for res.Next() {
+					var scanVariable sql.Row
+					err := res.Scan(&scanVariable)
+					if err != nil {
+						return false, result, &scanVariable, rows, err
+					}
+				}
+				return true, result, row, res, err
+			}
+		} else {
+			exec, err := database.dbConn.Exec(query, params)
+			if err != nil {
+				return false, result, row, rows, err
+			}
+			return false, exec, row, rows, err
+		}
 	}
-	err = os.Setenv(envVarName, string(secretValue))
-	if err != nil {
-		log.Printf("Initialized %s.\n", envVarName)
-		return
-	}
+	return false, result, row, rows, nil
 }
