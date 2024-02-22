@@ -34,12 +34,11 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 		return &pb.Reply{Email: "null"}, nil
 	}
 
-	var email interface{}
 	userId := in.UserId
 	query := fmt.Sprintf("SELECT email FROM users WHERE id=%d", userId)
-	_, e := dbConn.ExecuteQuery(true, query, &email)
-	if e != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	_, email, errorVar := dbConn.ExecuteQuery(true, query)
+	if errorVar != nil {
+		if errors.Is(errorVar, sql.ErrNoRows) {
 			log.SetPrefix("[INFO] ")
 			log.Printf("Email not present anymore")
 			return &pb.Reply{Email: "not present anymore"}, nil
@@ -49,7 +48,7 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 			return &pb.Reply{Email: "null"}, err
 		}
 	} else {
-		if emailString, ok := email.(string); ok {
+		if emailString, ok := email[0].(string); ok {
 			return &pb.Reply{Email: emailString}, nil
 		} else {
 			log.Println("Email is not a string!")

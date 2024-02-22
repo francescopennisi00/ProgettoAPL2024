@@ -37,7 +37,7 @@ func (database *DatabaseConnector) CloseConnection() error {
 	return nil
 }
 
-func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string, results ...*interface{}) (outcome sql.Result, resErr error) {
+func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string) (outcome sql.Result, results []interface{}, resErr error) {
 
 	if database.dbConn != nil {
 		if strings.HasPrefix(query, "SELECT ") {
@@ -45,34 +45,35 @@ func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string, res
 				row := database.dbConn.QueryRow(query)
 				err := row.Scan(results)
 				if err != nil {
-					return nil, err
+					return nil, results, err
 				} else {
-					return nil, nil
+					return nil, results, nil
 				}
 			} else {
 				res, err := database.dbConn.Query(query)
 				if err != nil {
-					return nil, nil
+					return nil, results, nil
 				}
 				i := 0
 				for res.Next() {
-					e := res.Scan(results[i])
-					if e != nil {
-						return nil, e
+					errorVar := res.Scan(results[i])
+					if errorVar != nil {
+						return nil, results, errorVar
 					}
 					i++
 				}
+				return nil, results, nil
 			}
 		} else {
 			exec, err := database.dbConn.Exec(query)
 			if err != nil {
-				return nil, err
+				return nil, results, err
 			}
-			return exec, nil
+			return exec, results, nil
 		}
 	}
 	log.SetPrefix("[ERROR]")
 	log.Println("DB connection already closed!")
 	er := sql.ErrConnDone
-	return nil, er
+	return nil, results, er
 }

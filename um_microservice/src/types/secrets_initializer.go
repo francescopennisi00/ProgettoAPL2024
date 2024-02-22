@@ -1,9 +1,13 @@
 package types
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"sync"
 )
+
+var lock = &sync.Mutex{}
 
 type SecretInitializer struct{}
 
@@ -11,6 +15,18 @@ var instance *SecretInitializer
 
 func NewSecretInitializer() *SecretInitializer {
 	if instance == nil {
+		lock.Lock()
+		defer lock.Unlock()
+		if instance == nil {
+			log.SetPrefix("[INFO]")
+			log.Println("Creating single instance now")
+			instance = &SecretInitializer{}
+		} else {
+			log.SetPrefix("[INFO]")
+			log.Println("Single instance already created.")
+		}
+	} else {
+		fmt.Println("Single instance already created.")
 		instance = &SecretInitializer{}
 	}
 	return instance
