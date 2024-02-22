@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.11
 
 WORKDIR /app
 
@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY worker .
 
-CMD [ "python", "worker_main.py" ]
+CMD [ "python", "worker/worker_main.py" ]

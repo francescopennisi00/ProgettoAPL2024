@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.11
 
 WORKDIR /app
 
@@ -10,4 +10,4 @@ COPY notifier_um_pb2.pyi .
 COPY notifier_um_pb2_grpc.py .
 COPY notifier .
 
-CMD [ "python", "notifier_main.py" ]
+CMD [ "python", "notifier/notifier_main.py" ]
