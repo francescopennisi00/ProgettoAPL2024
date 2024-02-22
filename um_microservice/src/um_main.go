@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -38,8 +37,11 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 		return &pb.Reply{Email: "null"}, nil
 	}
 
-	outcome, _, row, _, err := dbConn.ExecuteQuery("SELECT email FROM users WHERE id=?", true, true, int(in.UserId))
-	if err != nil {
+	var email interface{}
+	userId := in.UserId
+	query := fmt.Sprintf("SELECT email FROM users WHERE id=%d", userId)
+	_, e := dbConn.ExecuteQuery(true, query, &email)
+	if e != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.SetPrefix("[INFO] ")
 			log.Printf("Email not present anymore")
@@ -50,18 +52,12 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 			return &pb.Reply{Email: "null"}, err
 		}
 	} else {
-		if outcome == false {
-			log.SetPrefix("[ERROR]")
-			log.Println("DB connection already closed!")
+		if emailString, ok := email.(string); ok {
+			return &pb.Reply{Email: emailString}, nil
+		} else {
+			log.Println("Email is not a string!")
+			return &pb.Reply{Email: "null"}, nil
 		}
-		var email string
-		err := row.Scan(&email)
-		if err != nil {
-			log.SetPrefix("[ERROR]")
-			log.Println("Error in DB Scanning email")
-			return nil, err
-		}
-		return &pb.Reply{Email: email}, nil
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
+	"strings"
 )
 
 type DatabaseConnector struct {
@@ -36,38 +37,40 @@ func (database *DatabaseConnector) CloseConnection() error {
 	return nil
 }
 
-func (database *DatabaseConnector) ExecuteQuery(query string, fetchOne bool, selectQ bool, params ...any) (booleanOutcome bool, result sql.Result, row *sql.Row, rows *sql.Rows, resErr error) {
+func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string, results ...*interface{}) (outcome sql.Result, resErr error) {
 
 	if database.dbConn != nil {
-		if selectQ == true {
+		if strings.HasPrefix(query, "SELECT ") {
 			if fetchOne == true {
-				row := database.dbConn.QueryRow(query, params)
-				var scanVariable sql.Row
-				err := row.Scan(scanVariable)
+				row := database.dbConn.QueryRow(query)
+				err := row.Scan(results)
 				if err != nil {
-					return false, result, &scanVariable, rows, err
+					return nil, err
+				} else {
+					return nil, nil
 				}
 			} else {
-				res, err := database.dbConn.Query(query, params)
+				res, err := database.dbConn.Query(query)
 				if err != nil {
-					return false, result, row, rows, err
+					return nil, nil
 				}
 				for res.Next() {
-					var scanVariable sql.Row
-					err := res.Scan(&scanVariable)
-					if err != nil {
-						return false, result, &scanVariable, rows, err
+					e := res.Scan(results)
+					if e != nil {
+						return nil, e
 					}
 				}
-				return true, result, row, res, err
 			}
 		} else {
-			exec, err := database.dbConn.Exec(query, params)
+			exec, err := database.dbConn.Exec(query)
 			if err != nil {
-				return false, result, row, rows, err
+				return nil, err
 			}
-			return false, exec, row, rows, err
+			return exec, nil
 		}
 	}
-	return false, result, row, rows, nil
+	log.SetPrefix("[ERROR]")
+	log.Println("DB connection already closed!")
+	er := sql.ErrConnDone
+	return nil, er
 }
