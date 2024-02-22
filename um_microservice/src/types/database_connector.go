@@ -30,10 +30,10 @@ func (database *DatabaseConnector) CloseConnection() error {
 			log.Printf("DB connection closing error: %v", err)
 			return err
 		} else {
+			database.dbConn = nil
 			return nil
 		}
 	}
-	database.dbConn = nil
 	return nil
 }
 
@@ -54,11 +54,13 @@ func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string, res
 				if err != nil {
 					return nil, nil
 				}
+				i := 0
 				for res.Next() {
-					e := res.Scan(results)
+					e := res.Scan(results[i])
 					if e != nil {
 						return nil, e
 					}
+					i++
 				}
 			}
 		} else {

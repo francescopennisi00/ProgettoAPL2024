@@ -28,11 +28,7 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
 	_, err := dbConn.StartDBConnection(dataSource)
 	defer func(database *types.DatabaseConnector) {
-		err := database.CloseConnection()
-		if err != nil {
-			log.SetPrefix("[ERROR] ")
-			log.Println("Error in closing DB connection!")
-		}
+		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
 		return &pb.Reply{Email: "null"}, nil
