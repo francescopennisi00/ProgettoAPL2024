@@ -38,7 +38,7 @@ class KafkaProducer:
             try:
                 kadmin.create_topics([new_topic,])
                 logger.info("TOPIC CREATION STARTED!\n")
-                time.sleep(5)
+                time.sleep(3)  # wait to topic creation completion
                 list_topics_metadata = kadmin.list_topics()
                 topics = list_topics_metadata.topics  # Returns a dict()
                 logger.info(f"LIST_TOPICS: {list_topics_metadata}")
@@ -46,8 +46,7 @@ class KafkaProducer:
                 topic_names = set(topics.keys())
                 logger.info(f"TOPIC_NAMES: {topic_names}")
             except confluent_kafka.KafkaException as err:
-                logger.error(f"Error in creating topic:{topic_name}")
-
+                logger.error(f"Error in creating topic:{topic_name}: {err}")
 
     @staticmethod
     # Optional per-message delivery callback (triggered by poll() or flush())

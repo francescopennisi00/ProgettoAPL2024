@@ -12,7 +12,7 @@ class RESTQuerier:
     # if RESTQuerier object is already instantiated, then return it without re-instantiating
     def __new__(cls):
         if not cls._querier_instance:
-            cls._instance = super().__new__(cls)
+            cls._querier_instance = super().__new__(cls)
         return cls._querier_instance
 
     def make_query(self, apikey, location):
