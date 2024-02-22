@@ -10,9 +10,12 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 	pb "um_microservice"
 	"um_microservice/src/types"
 )
+
+var wg sync.WaitGroup
 
 var (
 	port = flag.Int("port", 50051, "The server port")
@@ -58,17 +61,18 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 }
 
 func serveNotifier() {
+	defer wg.Done()
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.SetPrefix("[ERROR]")
 		log.Fatalf("Failed to listen to requests from Notifier: %v", err)
 	}
-	s := grpc.NewServer()
-	pb.RegisterNotifierUmServer(s, &server{})
+	notifierServer := grpc.NewServer()
+	pb.RegisterNotifierUmServer(notifierServer, &server{})
 	log.SetPrefix("[INFO] ")
 	log.Printf("Notifier server listening at %v", lis.Addr())
-	if err := s.Serve(lis); err != nil {
+	if err := notifierServer.Serve(lis); err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Fatalf("Failed to serve Notifier: %v", err)
 	}
@@ -80,4 +84,31 @@ func main() {
 	siInstance.InitSecrets()
 
 	log.Println("ENV variables initialization done!")
+
+	// Creating table 'users' if not exits
+	var dbConn types.DatabaseConnector
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
+	_, err := dbConn.StartDBConnection(dataSource)
+	defer func(database *types.DatabaseConnector) {
+		_ = database.CloseConnection()
+	}(&dbConn)
+	if err != nil {
+		log.SetPrefix("[ERROR]")
+		log.Fatalf("Exit after da DB connection error! -> %s", err)
+	}
+
+	query := "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTO_INCREMENT, email VARCHAR(30) UNIQUE NOT NULL, password VARCHAR(64) NOT NULL)"
+	_, _, err = dbConn.ExecuteQuery(false, query)
+	if err != nil {
+		log.SetPrefix("[ERROR]")
+		log.Fatalf("Exit after DB query execution error!")
+	}
+
+	fmt.Println("Starting notifier serving thread!")
+	wg.Add(1)
+	go serveNotifier()
+	wg.Wait()
+	log.SetPrefix("[INFO]")
+	log.Println("All goroutines have finished. Exiting...")
+
 }
