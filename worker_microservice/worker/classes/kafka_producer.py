@@ -1,4 +1,6 @@
 import os
+import time
+
 import confluent_kafka
 from confluent_kafka.admin import AdminClient, NewTopic
 from worker.classes.database_connector import DatabaseConnector
@@ -33,8 +35,19 @@ class KafkaProducer:
         if not found:
             logger.info(f"TOPIC {topic_name} NOT FOUND: CREATING IT\n")
             new_topic = NewTopic(topic_name, 1, 1)  # Number-of-partitions = 1, Number-of-replicas = 1
-            kadmin.create_topics([new_topic,])
-            logger.info("TOPIC CREATION STARTED!\n")
+            try:
+                kadmin.create_topics([new_topic,])
+                logger.info("TOPIC CREATION STARTED!\n")
+                time.sleep(5)
+                list_topics_metadata = kadmin.list_topics()
+                topics = list_topics_metadata.topics  # Returns a dict()
+                logger.info(f"LIST_TOPICS: {list_topics_metadata}")
+                logger.info(f"TOPICS: {topics}")
+                topic_names = set(topics.keys())
+                logger.info(f"TOPIC_NAMES: {topic_names}")
+            except confluent_kafka.KafkaException as err:
+                logger.error(f"Error in creating topic:{topic_name}")
+
 
     @staticmethod
     # Optional per-message delivery callback (triggered by poll() or flush())

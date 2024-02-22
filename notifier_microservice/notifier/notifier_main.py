@@ -151,7 +151,7 @@ if __name__ == "__main__":
             elif msg.error():
                 logger.info('error: {}\n'.format(msg.error()))
                 if KafkaConsumer.topic_not_found(msg):
-                    raise SystemExit("Exiting because topic was not found!")
+                    continue
 
             else:
 

@@ -117,7 +117,7 @@ services:
   um_service:
     container_name: um-service
     build:
-      context: ../user_manager_microservice
+      context: ../um_microservice
       dockerfile: Dockerfile
     image: user_manager_service_image:base
     depends_on:
