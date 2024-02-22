@@ -30,7 +30,8 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 	defer func(database *types.DatabaseConnector) {
 		err := database.CloseConnection()
 		if err != nil {
-			os.Exit(-1)
+			log.SetPrefix("[ERROR] ")
+			log.Println("Error in closing DB connection!")
 		}
 	}(&dbConn)
 	if err != nil {
