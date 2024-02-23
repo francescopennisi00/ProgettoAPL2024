@@ -23,11 +23,11 @@ func NewSecretInitializer() *SecretInitializer {
 			instance = &SecretInitializer{}
 		} else {
 			log.SetPrefix("[INFO] ")
-			log.Println("Single instance already created.")
+			log.Println("Single instance already created")
 		}
 	} else {
 		log.SetPrefix("[INFO] ")
-		fmt.Println("Single instance already created.")
+		fmt.Println("Single instance already created")
 		instance = &SecretInitializer{}
 	}
 	return instance
