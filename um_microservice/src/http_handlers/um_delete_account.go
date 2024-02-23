@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	grpc_c "um_microservice/src/communication_grpc"
+	grpcC "um_microservice/src/communication_grpc"
 	"um_microservice/src/types"
 	"um_microservice/src/utils"
 )
@@ -56,7 +56,7 @@ func DeleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	result := grpc_c.DeleteUserConstraintsByUserId(row[0])
+	result := grpcC.DeleteUserConstraintsByUserId(row[0])
 	if result == nil {
 		query := fmt.Sprintf("DELETE FROM users WHERE email='%s' and password='%s'", email, hashPsw)
 		_, _, errV := dbConn.ExecuteQuery(query)

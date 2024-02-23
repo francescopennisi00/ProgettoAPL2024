@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 	"um_microservice/src/types"
-	utils "um_microservice/src/utils"
+	"um_microservice/src/utils"
 )
 
 func RegisterHandler(writer http.ResponseWriter, request *http.Request) {
