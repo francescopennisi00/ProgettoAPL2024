@@ -37,13 +37,17 @@ func (database *DatabaseConnector) CloseConnection() error {
 	return nil
 }
 
-func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string) (outcome sql.Result, results []interface{}, resErr error) {
+func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string) (outcome sql.Result, results []string, resErr error) {
 
 	if database.dbConn != nil {
+		results = make([]string, 0)
+		var result string
 		if strings.HasPrefix(query, "SELECT ") {
 			if fetchOne == true {
-				row := database.dbConn.QueryRow(query)
-				err := row.Scan(results)
+				err := database.dbConn.QueryRow(query).Scan(&result)
+				log.SetPrefix("[INFO]")
+				log.Printf("RESULT: %s", result)
+				results = append(results, result)
 				if err != nil {
 					return nil, results, err
 				} else {
@@ -56,7 +60,10 @@ func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string) (ou
 				}
 				i := 0
 				for res.Next() {
-					errorVar := res.Scan(results[i])
+					errorVar := res.Scan(&result)
+					log.SetPrefix("[INFO]")
+					log.Printf("RESULT[%d]: %s", i, result)
+					results = append(results, result)
 					if errorVar != nil {
 						return nil, results, errorVar
 					}

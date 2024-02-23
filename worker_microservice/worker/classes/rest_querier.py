@@ -16,8 +16,8 @@ class RESTQuerier:
         return cls._querier_instance
 
     def make_query(self, apikey, location):
-        rest_call = constants.ENDPOINT_REST_OPEN_WEATHER.replace("LATITUDE", location[1])
-        rest_call = rest_call.replace("LONGITUDE", location[2])
+        rest_call = constants.ENDPOINT_REST_OPEN_WEATHER.replace("LATITUDE", str(location[1]))
+        rest_call = rest_call.replace("LONGITUDE", str(location[2]))
         rest_call = rest_call.replace("APIKEY", apikey)
         logger.info(f"ENDPOINT OPEN WEATHER: {rest_call}\n")
         try:
