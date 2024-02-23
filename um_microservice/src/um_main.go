@@ -42,10 +42,7 @@ type umWmsServer struct {
 var wg sync.WaitGroup
 
 var (
-	portWMS = flag.Int("portWMS", 50052, "The server port for WMS")
-)
-
-var (
+	portWMS      = flag.Int("portWMS", 50052, "The server port for WMS")
 	portNotifier = flag.Int("port", 50051, "The server port for Notifier")
 )
 
@@ -378,6 +375,24 @@ func registerHandler(writer http.ResponseWriter, request *http.Request) {
 	setResponseMessage(writer, http.StatusOK, "Registration made successfully! Now try to sign in!")
 }
 
+func serveWMS() {
+	defer wg.Done()
+	flag.Parse()
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *portWMS))
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Fatalf("Failed to listen to requests from WMS: %v", err)
+	}
+	wmsServer := grpc.NewServer()
+	wmsUm.RegisterWMSUmServer(wmsServer, &umWmsServer{})
+	log.SetPrefix("[INFO] ")
+	log.Printf("WMS server listening at %v", lis.Addr())
+	if err := wmsServer.Serve(lis); err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Fatalf("Failed to serve WMS: %v", err)
+	}
+}
+
 func serveNotifier() {
 	defer wg.Done()
 	flag.Parse()
@@ -444,7 +459,8 @@ func main() {
 
 	go serveNotifier()
 	go serveAPIGateway()
-	wg.Add(2)
+	go serveWMS()
+	wg.Add(3)
 	wg.Wait()
 	log.SetPrefix("[INFO] ")
 	log.Println("All goroutines have finished. Exiting...")
