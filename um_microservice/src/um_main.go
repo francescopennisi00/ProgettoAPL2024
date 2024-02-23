@@ -183,7 +183,7 @@ func (s *umNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Requ
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			log.SetPrefix("[INFO] ")
-			log.Printf("Email not present anymore")
+			log.Println("Email not present anymore")
 			return &notifierUm.Reply{Email: "not present anymore"}, nil
 		} else {
 			log.SetPrefix("[ERROR] ")
@@ -386,7 +386,7 @@ func serveWMS() {
 	wmsServer := grpc.NewServer()
 	wmsUm.RegisterWMSUmServer(wmsServer, &umWmsServer{})
 	log.SetPrefix("[INFO] ")
-	log.Printf("WMS server listening at %v", lis.Addr())
+	log.Printf("WMS server listening at %v\n", lis.Addr())
 	if err := wmsServer.Serve(lis); err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Fatalf("Failed to serve WMS: %v", err)
@@ -404,7 +404,7 @@ func serveNotifier() {
 	notifierServer := grpc.NewServer()
 	notifierUm.RegisterNotifierUmServer(notifierServer, &umNotifierServer{})
 	log.SetPrefix("[INFO] ")
-	log.Printf("Notifier server listening at %v", lis.Addr())
+	log.Printf("Notifier server listening at %v\n", lis.Addr())
 	if err := notifierServer.Serve(lis); err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Fatalf("Failed to serve Notifier: %v", err)
@@ -417,7 +417,7 @@ func serveAPIGateway() {
 
 	hostname, _ := os.Hostname()
 	log.SetPrefix("[INFO] ")
-	log.Printf("Hostname: %s server starting on port: %s", hostname, port)
+	log.Printf("Hostname: %s server starting on port: %s\n", hostname, port)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/login", loginHandler).Methods("POST")

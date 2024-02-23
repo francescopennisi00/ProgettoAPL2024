@@ -47,7 +47,7 @@ func (si *SecretInitializer) initSecret(envVarName string) {
 	err = os.Setenv(envVarName, string(secretValue))
 	if err != nil {
 		log.SetPrefix("[INFO] ")
-		log.Printf("Initialized %s.\n", envVarName)
+		log.Printf("Initialized %s\n", envVarName)
 		return
 	}
 }

@@ -17,7 +17,7 @@ func (database *DatabaseConnector) StartDBConnection(dataSource string) (*sql.DB
 	database.dbConn, err = sql.Open("mysql", dataSource)
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Printf("Error connecting to the database: %v", err)
+		log.Printf("Error connecting to the database: %v\n", err)
 		return database.dbConn, err
 	}
 	return database.dbConn, nil
@@ -28,7 +28,7 @@ func (database *DatabaseConnector) CloseConnection() error {
 		err := database.dbConn.Close()
 		if err != nil {
 			log.SetPrefix("[ERROR] ")
-			log.Printf("DB connection closing error: %v", err)
+			log.Printf("DB connection closing error: %v\n", err)
 			return err
 		} else {
 			database.dbConn = nil
@@ -52,7 +52,7 @@ func (database *DatabaseConnector) ExecuteQuery(query string, fetchOne ...bool) 
 			if fetchOne[0] == true {
 				err := database.dbConn.QueryRow(query).Scan(&result)
 				log.SetPrefix("[INFO] ")
-				log.Printf("RESULT: %s", result)
+				log.Printf("RESULT: %s\n", result)
 				results = append(results, result)
 				if err != nil {
 					return nil, results, err
@@ -68,7 +68,7 @@ func (database *DatabaseConnector) ExecuteQuery(query string, fetchOne ...bool) 
 				for res.Next() {
 					errorVar := res.Scan(&result)
 					log.SetPrefix("[INFO] ")
-					log.Printf("RESULT[%d]: %s", i, result)
+					log.Printf("RESULT[%d]: %s\n", i, result)
 					results = append(results, result)
 					if errorVar != nil {
 						return nil, results, errorVar
@@ -96,7 +96,7 @@ func (database *DatabaseConnector) BeginTransaction() (*sql.Tx, error) {
 	database.transaction, err = database.dbConn.Begin()
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Printf("DB error in starting transaction: %v", err)
+		log.Printf("DB error in starting transaction: %v\n", err)
 		return nil, err
 	}
 	return database.transaction, nil
@@ -116,7 +116,7 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string, fetchOne ..
 			if fetchOne[0] == true {
 				err := database.transaction.QueryRow(query).Scan(&result)
 				log.SetPrefix("[INFO] ")
-				log.Printf("RESULT: %s", result)
+				log.Printf("RESULT: %s\n", result)
 				results = append(results, result)
 				if err != nil {
 					return nil, results, err
@@ -132,7 +132,7 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string, fetchOne ..
 				for res.Next() {
 					errorVar := res.Scan(&result)
 					log.SetPrefix("[INFO] ")
-					log.Printf("RESULT[%d]: %s", i, result)
+					log.Printf("RESULT[%d]: %s\n", i, result)
 					results = append(results, result)
 					if errorVar != nil {
 						return nil, results, errorVar
@@ -161,7 +161,7 @@ func (database *DatabaseConnector) RollbackTransaction() error {
 		err = database.transaction.Rollback()
 		if err != nil {
 			if rollbackErr := database.transaction.Rollback(); rollbackErr != nil {
-				log.Printf("Unable to rollback: %v", rollbackErr)
+				log.Printf("Unable to rollback: %v\n", rollbackErr)
 				return rollbackErr
 			} else {
 				return nil
@@ -181,7 +181,7 @@ func (database *DatabaseConnector) CommitTransaction() error {
 		err := database.transaction.Commit()
 		if err != nil {
 			log.SetPrefix("[ERROR] ")
-			log.Printf("DB transaction commit error: %v", err)
+			log.Printf("DB transaction commit error: %v\n", err)
 			return err
 		} else {
 			database.transaction = nil
