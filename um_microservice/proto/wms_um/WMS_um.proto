@@ -3,11 +3,20 @@ option go_package = "./";
 package WMS_um;
 
 service WMSUm {
-  rpc RequestUserIdViaJWTToken (Request) returns (ResponseCode) {}
+  rpc RequestUserIdViaJWTToken (Request) returns (Reply) {}
+  rpc RequestDeleteUser_Constraints (User) returns (ResponseCode) {}
+}
+
+message User{
+  int64 user_id = 1;
 }
 
 message Request {
   string jwt_token = 1;
+}
+
+message Reply {
+  int64 user_id = 1;
 }
 
 message ResponseCode {

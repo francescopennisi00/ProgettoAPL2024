@@ -12,14 +12,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"um_microservice/proto/notifier_um"
+	notifierUm "um_microservice/proto/notifier_um"
+	wmsUm "um_microservice/proto/wms_um"
 	"um_microservice/src/types"
 )
 
@@ -29,7 +32,7 @@ type credentials struct {
 }
 
 type server struct {
-	notifier_um.UnimplementedNotifierUmServer
+	notifierUm.UnimplementedNotifierUmServer
 }
 
 var wg sync.WaitGroup
@@ -51,13 +54,39 @@ func setResponseMessage(w http.ResponseWriter, code int, message string) {
 	_, _ = fmt.Fprintf(w, "%s\n", message)
 }
 
-// TODO: implement this one!
-func deleteUserConstraintsByUserId(userId string) bool {
+func deleteUserConstraintsByUserId(userId string) error {
 
-	return false
+	//convert userId from string to int64
+	num, err := strconv.ParseInt(userId, 10, 64)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		fmt.Printf("Error during conversion: %v\n", err)
+		return err
+	}
+
+	// start connection to gRPC server
+	conn, errV := grpc.Dial("wms-service:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	defer func(conn *grpc.ClientConn) {
+		_ = conn.Close()
+	}(conn)
+	if errV != nil {
+		return errV
+	}
+	client := wmsUm.NewWMSUmClient(conn)
+
+	response, errVar := client.RequestDeleteUser_Constraints(context.Background(), &wmsUm.User{UserId: num})
+	if errVar != nil {
+		return errVar
+	}
+	if response.Code != 0 {
+		errVariable := errors.New("something went wrong in WMS while deleting user constraints")
+		return errVariable
+	}
+
+	return nil //no error occurred
 }
 
-func (s *server) RequestEmail(ctx context.Context, in *notifier_um.Request) (*notifier_um.Reply, error) {
+func (s *server) RequestEmail(ctx context.Context, in *notifierUm.Request) (*notifierUm.Reply, error) {
 
 	var dbConn types.DatabaseConnector
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
@@ -66,7 +95,7 @@ func (s *server) RequestEmail(ctx context.Context, in *notifier_um.Request) (*no
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		return &notifier_um.Reply{Email: "null"}, nil
+		return &notifierUm.Reply{Email: "null"}, nil
 	}
 
 	userId := in.UserId
@@ -76,15 +105,15 @@ func (s *server) RequestEmail(ctx context.Context, in *notifier_um.Request) (*no
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			log.SetPrefix("[INFO] ")
 			log.Printf("Email not present anymore")
-			return &notifier_um.Reply{Email: "not present anymore"}, nil
+			return &notifierUm.Reply{Email: "not present anymore"}, nil
 		} else {
 			log.SetPrefix("[ERROR] ")
 			log.Printf("DB Error: %v\n", errorVar)
-			return &notifier_um.Reply{Email: "null"}, errorVar
+			return &notifierUm.Reply{Email: "null"}, errorVar
 		}
 	} else {
 		emailString := email[0]
-		return &notifier_um.Reply{Email: emailString}, nil
+		return &notifierUm.Reply{Email: emailString}, nil
 	}
 }
 
@@ -132,7 +161,7 @@ func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	result := deleteUserConstraintsByUserId(row[0])
-	if result == true {
+	if result == nil {
 		query := fmt.Sprintf("DELETE FROM users WHERE email=%s and password=%s", email, hashPsw)
 		_, _, errV := dbConn.ExecuteQuery(query)
 		if errV != nil {
@@ -276,7 +305,7 @@ func serveNotifier() {
 		log.Fatalf("Failed to listen to requests from Notifier: %v", err)
 	}
 	notifierServer := grpc.NewServer()
-	notifier_um.RegisterNotifierUmServer(notifierServer, &server{})
+	notifierUm.RegisterNotifierUmServer(notifierServer, &server{})
 	log.SetPrefix("[INFO] ")
 	log.Printf("Notifier server listening at %v", lis.Addr())
 	if err := notifierServer.Serve(lis); err != nil {
