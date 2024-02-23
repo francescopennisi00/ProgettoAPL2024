@@ -19,7 +19,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-	pb "um_microservice"
+	"um_microservice/proto/notifier_um"
 	"um_microservice/src/types"
 )
 
@@ -29,7 +29,7 @@ type credentials struct {
 }
 
 type server struct {
-	pb.UnimplementedNotifierUmServer
+	notifier_um.UnimplementedNotifierUmServer
 }
 
 var wg sync.WaitGroup
@@ -53,10 +53,11 @@ func setResponseMessage(w http.ResponseWriter, code int, message string) {
 
 // TODO: implement this one!
 func deleteUserConstraintsByUserId(userId string) bool {
+
 	return false
 }
 
-func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, error) {
+func (s *server) RequestEmail(ctx context.Context, in *notifier_um.Request) (*notifier_um.Reply, error) {
 
 	var dbConn types.DatabaseConnector
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
@@ -65,7 +66,7 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		return &pb.Reply{Email: "null"}, nil
+		return &notifier_um.Reply{Email: "null"}, nil
 	}
 
 	userId := in.UserId
@@ -75,15 +76,15 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			log.SetPrefix("[INFO] ")
 			log.Printf("Email not present anymore")
-			return &pb.Reply{Email: "not present anymore"}, nil
+			return &notifier_um.Reply{Email: "not present anymore"}, nil
 		} else {
 			log.SetPrefix("[ERROR] ")
 			log.Printf("DB Error: %v\n", errorVar)
-			return &pb.Reply{Email: "null"}, errorVar
+			return &notifier_um.Reply{Email: "null"}, errorVar
 		}
 	} else {
 		emailString := email[0]
-		return &pb.Reply{Email: emailString}, nil
+		return &notifier_um.Reply{Email: emailString}, nil
 	}
 }
 
@@ -275,7 +276,7 @@ func serveNotifier() {
 		log.Fatalf("Failed to listen to requests from Notifier: %v", err)
 	}
 	notifierServer := grpc.NewServer()
-	pb.RegisterNotifierUmServer(notifierServer, &server{})
+	notifier_um.RegisterNotifierUmServer(notifierServer, &server{})
 	log.SetPrefix("[INFO] ")
 	log.Printf("Notifier server listening at %v", lis.Addr())
 	if err := notifierServer.Serve(lis); err != nil {

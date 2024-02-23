@@ -1,0 +1,15 @@
+syntax = "proto3";
+option go_package = "./";
+package WMS_um;
+
+service WMSUm {
+  rpc RequestUserIdViaJWTToken (Request) returns (ResponseCode) {}
+}
+
+message Request {
+  string jwt_token = 1;
+}
+
+message ResponseCode {
+  int64 code = 1;
+}

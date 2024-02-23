@@ -4,7 +4,7 @@
 // - protoc             v4.25.3
 // source: um_microservice/notifier_um.proto
 
-package __
+package notifier_um
 
 import (
 	context "context"
