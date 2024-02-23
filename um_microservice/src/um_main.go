@@ -31,14 +31,22 @@ type credentials struct {
 	password string
 }
 
-type server struct {
+type umNotifierServer struct {
 	notifierUm.UnimplementedNotifierUmServer
+}
+
+type umWmsServer struct {
+	wmsUm.UnimplementedWMSUmServer
 }
 
 var wg sync.WaitGroup
 
 var (
-	port = flag.Int("port", 50051, "The server port")
+	portWMS = flag.Int("portWMS", 50052, "The server port for WMS")
+)
+
+var (
+	portNotifier = flag.Int("port", 50051, "The server port for Notifier")
 )
 
 func calculateHash(inputString string) string {
@@ -86,7 +94,81 @@ func deleteUserConstraintsByUserId(userId string) error {
 	return nil //no error occurred
 }
 
-func (s *server) RequestEmail(ctx context.Context, in *notifierUm.Request) (*notifierUm.Reply, error) {
+func (s *umNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wmsUm.Request) (*wmsUm.Reply, error) {
+
+	// extracting JWT token from the request
+	tokenString := in.GetJwtToken()
+
+	// extracting token information without verifying them: needed in order to retrieve user email
+	token, err := jwt.Parse(tokenString, nil)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("Error in parsing JWT Token without verifying it: %v\n", err)
+		return nil, err
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("Error in extracting JWT Token without verifying it with Claims: %v\n", err)
+		return nil, err
+	}
+	email, okBool := claims["email"].(string)
+	if !okBool {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("Impossible to extract email from JWT Token without verifying it: %v\n", err)
+		return nil, err
+	}
+
+	// Retrieve user's password from DB in oder to verifying JWT Token and authenticate him
+	var dbConn types.DatabaseConnector
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
+	_, err = dbConn.StartDBConnection(dataSource)
+	defer func(database *types.DatabaseConnector) {
+		_ = database.CloseConnection()
+	}(&dbConn)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("DB connection error! -> %v\n", err)
+	}
+	query := fmt.Sprintf("SELECT id, password FROM users WHERE email= %s", email)
+	_, row, errV := dbConn.ExecuteQuery(query, true)
+	if errV != nil {
+		if errors.Is(errV, sql.ErrNoRows) {
+			return &wmsUm.Reply{UserId: -3}, nil // token is not valid: email not present
+		}
+		log.SetPrefix("[ERROR] ")
+		log.Printf("DB query error! -> %v\n", errV)
+		return nil, errV
+	}
+
+	//convert user id from string to int64
+	var idUser int64
+	idUser, err = strconv.ParseInt(row[0], 10, 64)
+	if err != nil {
+		fmt.Printf("Error: user id returned by DB is not an integer: -> %v\n", err)
+		return nil, err
+	}
+
+	//password is already a string: no conversion is needed
+	password := row[1]
+
+	// verify JWT Token with password as secret
+	token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(password), nil
+	})
+	if errors.Is(err, jwt.ErrTokenExpired) {
+		return &wmsUm.Reply{UserId: -1}, nil //token is expired
+	}
+	if !token.Valid {
+		return &wmsUm.Reply{UserId: -3}, nil //token is not valid: password incorrect
+	}
+
+	// Everything succeeded, return user ID
+	return &wmsUm.Reply{UserId: idUser}, nil
+
+}
+
+func (s *umNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Request) (*notifierUm.Reply, error) {
 
 	var dbConn types.DatabaseConnector
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
@@ -299,13 +381,13 @@ func registerHandler(writer http.ResponseWriter, request *http.Request) {
 func serveNotifier() {
 	defer wg.Done()
 	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *portNotifier))
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Fatalf("Failed to listen to requests from Notifier: %v", err)
 	}
 	notifierServer := grpc.NewServer()
-	notifierUm.RegisterNotifierUmServer(notifierServer, &server{})
+	notifierUm.RegisterNotifierUmServer(notifierServer, &umNotifierServer{})
 	log.SetPrefix("[INFO] ")
 	log.Printf("Notifier server listening at %v", lis.Addr())
 	if err := notifierServer.Serve(lis); err != nil {
