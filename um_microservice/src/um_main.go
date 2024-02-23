@@ -127,7 +127,7 @@ func (s *umNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wms
 		log.SetPrefix("[ERROR] ")
 		log.Printf("DB connection error! -> %v\n", err)
 	}
-	query := fmt.Sprintf("SELECT id, password FROM users WHERE email= %s", email)
+	query := fmt.Sprintf("SELECT id, password FROM users WHERE email= '%s'", email)
 	_, row, errV := dbConn.ExecuteQuery(query, true)
 	if errV != nil {
 		if errors.Is(errV, sql.ErrNoRows) {
@@ -178,7 +178,7 @@ func (s *umNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Requ
 	}
 
 	userId := in.UserId
-	query := fmt.Sprintf("SELECT email FROM users WHERE id=%d", userId)
+	query := fmt.Sprintf("SELECT email FROM users WHERE id='%d'", userId)
 	_, email, errorVar := dbConn.ExecuteQuery(query, true)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
@@ -210,7 +210,7 @@ func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 	var cred credentials
 	err := json.NewDecoder(request.Body).Decode(&cred)
 	if err != nil {
-		setResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %s", err))
+		setResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %v", err))
 		return
 	}
 	email := cred.email
@@ -223,28 +223,28 @@ func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %s", err))
+		setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
 		return
 	}
 
-	query := fmt.Sprintf("SELECT id, email, password FROM users WHERE email=%s and password=%s", email, hashPsw)
+	query := fmt.Sprintf("SELECT id, email, password FROM users WHERE email='%s' and password='%s'", email, hashPsw)
 	_, row, errorVar := dbConn.ExecuteQuery(query, true)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			setResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
 			return
 		} else {
-			setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in select from DB table 'users': %s", errorVar))
+			setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in select from DB table 'users': %v", errorVar))
 			return
 		}
 	}
 
 	result := deleteUserConstraintsByUserId(row[0])
 	if result == nil {
-		query := fmt.Sprintf("DELETE FROM users WHERE email=%s and password=%s", email, hashPsw)
+		query := fmt.Sprintf("DELETE FROM users WHERE email='%s' and password='%s'", email, hashPsw)
 		_, _, errV := dbConn.ExecuteQuery(query)
 		if errV != nil {
-			setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database delete: %s", err))
+			setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database delete: %v", err))
 			return
 		} else {
 			setResponseMessage(writer, http.StatusOK, "Account deleted with relative user constraints!")
@@ -269,7 +269,7 @@ func loginHandler(writer http.ResponseWriter, request *http.Request) {
 	var cred credentials
 	err := json.NewDecoder(request.Body).Decode(&cred)
 	if err != nil {
-		setResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %s", err))
+		setResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %v", err))
 		return
 	}
 	email := cred.email
@@ -282,7 +282,7 @@ func loginHandler(writer http.ResponseWriter, request *http.Request) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %s", err))
+		setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
 		return
 	}
 
@@ -293,7 +293,7 @@ func loginHandler(writer http.ResponseWriter, request *http.Request) {
 			setResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
 			return
 		} else {
-			setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in select from DB table 'users': %s", errorVar))
+			setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in select from DB table 'users': %v", errorVar))
 			return
 		}
 	}
@@ -335,7 +335,7 @@ func registerHandler(writer http.ResponseWriter, request *http.Request) {
 	var cred credentials
 	err := json.NewDecoder(request.Body).Decode(&cred)
 	if err != nil {
-		setResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %s", err))
+		setResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %v", err))
 		return
 	}
 	email := cred.email
@@ -347,24 +347,24 @@ func registerHandler(writer http.ResponseWriter, request *http.Request) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %s", err))
+		setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
 		return
 	}
 
-	query := fmt.Sprintf("SELECT email FROM users WHERE email=%s", email)
+	query := fmt.Sprintf("SELECT email FROM users WHERE email='%s'", email)
 	_, _, errorVar := dbConn.ExecuteQuery(query, true)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			// if there is no row this means that the user is not yet registered
 			hashPsw := calculateHash(password)
-			query = fmt.Sprintf("INSERT INTO users (email, password) VALUES (%s, %s)", email, hashPsw)
+			query = fmt.Sprintf("INSERT INTO users (email, password) VALUES ('%s', '%s')", email, hashPsw)
 			_, _, err := dbConn.ExecuteQuery(query)
 			if err != nil {
-				setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database insert: %s", err))
+				setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database insert: %v", err))
 				return
 			}
 		} else {
-			setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %s", err))
+			setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error on ExecuteQuery in connecting to database: %v", errorVar))
 			return
 		}
 	} else {
