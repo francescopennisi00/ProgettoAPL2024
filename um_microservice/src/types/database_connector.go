@@ -26,7 +26,7 @@ func (database *DatabaseConnector) CloseConnection() error {
 	if database.dbConn != nil {
 		err := database.dbConn.Close()
 		if err != nil {
-			log.SetPrefix("[ERROR]")
+			log.SetPrefix("[ERROR] ")
 			log.Printf("DB connection closing error: %v", err)
 			return err
 		} else {
@@ -37,15 +37,20 @@ func (database *DatabaseConnector) CloseConnection() error {
 	return nil
 }
 
-func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string) (outcome sql.Result, results []string, resErr error) {
+func (database *DatabaseConnector) ExecuteQuery(query string, fetchOne ...bool) (outcome sql.Result, results []string, resErr error) {
+
+	//default value of fetchOne is false
+	if len(fetchOne) == 0 {
+		fetchOne = append(fetchOne, false)
+	}
 
 	if database.dbConn != nil {
 		results = make([]string, 0)
 		var result string
 		if strings.HasPrefix(query, "SELECT ") {
-			if fetchOne == true {
+			if fetchOne[0] == true {
 				err := database.dbConn.QueryRow(query).Scan(&result)
-				log.SetPrefix("[INFO]")
+				log.SetPrefix("[INFO] ")
 				log.Printf("RESULT: %s", result)
 				results = append(results, result)
 				if err != nil {
@@ -61,7 +66,7 @@ func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string) (ou
 				i := 0
 				for res.Next() {
 					errorVar := res.Scan(&result)
-					log.SetPrefix("[INFO]")
+					log.SetPrefix("[INFO] ")
 					log.Printf("RESULT[%d]: %s", i, result)
 					results = append(results, result)
 					if errorVar != nil {
@@ -79,7 +84,7 @@ func (database *DatabaseConnector) ExecuteQuery(fetchOne bool, query string) (ou
 			return exec, results, nil
 		}
 	}
-	log.SetPrefix("[ERROR]")
+	log.SetPrefix("[ERROR] ")
 	log.Println("DB connection already closed!")
 	er := sql.ErrConnDone
 	return nil, results, er

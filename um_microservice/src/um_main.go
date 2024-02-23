@@ -52,7 +52,7 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 
 	userId := in.UserId
 	query := fmt.Sprintf("SELECT email FROM users WHERE id=%d", userId)
-	_, email, errorVar := dbConn.ExecuteQuery(true, query)
+	_, email, errorVar := dbConn.ExecuteQuery(query, true)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			log.SetPrefix("[INFO] ")
@@ -101,7 +101,7 @@ func loginHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	query := fmt.Sprintf("SELECT email, password FROM users WHERE email='%s' AND password='%s'", email, hashPsw)
-	_, _, errorVar := dbConn.ExecuteQuery(true, query)
+	_, _, errorVar := dbConn.ExecuteQuery(query, true)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			setResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
@@ -165,13 +165,13 @@ func registerHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	query := fmt.Sprintf("SELECT email FROM users WHERE email=%s", email)
-	_, _, errorVar := dbConn.ExecuteQuery(true, query)
+	_, _, errorVar := dbConn.ExecuteQuery(query, true)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			// if there is no row this means that the user is not yet registered
 			hashPsw := calculateHash(password)
 			query = fmt.Sprintf("INSERT INTO users (email, password) VALUES (%s, %s)", email, hashPsw)
-			_, _, err := dbConn.ExecuteQuery(false, query)
+			_, _, err := dbConn.ExecuteQuery(query)
 			if err != nil {
 				setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database insert: %s", err))
 				return
@@ -203,7 +203,7 @@ func serveNotifier() {
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
-		log.SetPrefix("[ERROR]")
+		log.SetPrefix("[ERROR] ")
 		log.Fatalf("Failed to listen to requests from Notifier: %v", err)
 	}
 	notifierServer := grpc.NewServer()
@@ -221,14 +221,14 @@ func serveAPIgateway() {
 	port := "50053"
 
 	hostname, _ := os.Hostname()
-	log.SetPrefix("[INFO]")
+	log.SetPrefix("[INFO] ")
 	log.Printf("Hostname: %s server starting on port: %s", hostname, port)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/login", loginHandler).Methods("POST")
 	router.HandleFunc("/register", registerHandler).Methods("POST")
 	//router.HandleFunc("/delete_account", deleteAccountHandler).Methods("POST")
-	log.SetPrefix("[ERROR]")
+	log.SetPrefix("[ERROR] ")
 	log.Fatalln(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }
 
@@ -237,6 +237,7 @@ func main() {
 	siInstance := types.NewSecretInitializer()
 	siInstance.InitSecrets()
 
+	log.SetPrefix("[INFO] ")
 	log.Println("ENV variables initialization done!")
 
 	// Creating table 'users' if not exits
@@ -247,24 +248,25 @@ func main() {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		log.SetPrefix("[ERROR]")
+		log.SetPrefix("[ERROR] ")
 		log.Fatalf("Exit after da DB connection error! -> %s", err)
 	}
 
 	query := "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTO_INCREMENT, email VARCHAR(30) UNIQUE NOT NULL, password VARCHAR(64) NOT NULL)"
-	_, _, err = dbConn.ExecuteQuery(false, query)
+	_, _, err = dbConn.ExecuteQuery(query)
 	if err != nil {
-		log.SetPrefix("[ERROR]")
+		log.SetPrefix("[ERROR] ")
 		log.Fatalf("Exit after DB query execution error!")
 	}
 
-	fmt.Println("Starting notifier serving goroutine!")
+	log.SetPrefix("[INFO] ")
+	log.Println("Starting notifier serving goroutine!")
 
 	go serveNotifier()
 	go serveAPIgateway()
 	wg.Add(2)
 	wg.Wait()
-	log.SetPrefix("[INFO]")
+	log.SetPrefix("[INFO] ")
 	log.Println("All goroutines have finished. Exiting...")
 
 }
