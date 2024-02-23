@@ -125,7 +125,8 @@ services:
     expose:
       - "50051"
       - "50052"
-      - "50053"
+    ports:
+      - "9090:50053"
     secrets:
       - um_DB_root_psw
     environment:

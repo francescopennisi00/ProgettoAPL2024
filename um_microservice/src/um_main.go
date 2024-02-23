@@ -9,6 +9,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
 	"log"
@@ -17,6 +18,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 	pb "um_microservice"
 	"um_microservice/src/types"
 )
@@ -65,6 +67,71 @@ func (s *server) RequestEmail(ctx context.Context, in *pb.Request) (*pb.Reply, e
 		emailString := email[0]
 		return &pb.Reply{Email: emailString}, nil
 	}
+}
+
+func loginHandler(writer http.ResponseWriter, request *http.Request) {
+
+	if request.Method != http.MethodPost {
+		setResponseMessage(writer, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	if contentType := request.Header.Get("Content-Type"); !strings.Contains(contentType, "application/json") {
+		setResponseMessage(writer, http.StatusBadRequest, "Error: the request must be in JSON format")
+		return
+	}
+	var cred credentials
+	err := json.NewDecoder(request.Body).Decode(&cred)
+	if err != nil {
+		setResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %s", err))
+		return
+	}
+	email := cred.email
+	password := cred.password
+	hashPsw := calculateHash(password)
+	var dbConn types.DatabaseConnector
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
+	_, err = dbConn.StartDBConnection(dataSource)
+	defer func(database *types.DatabaseConnector) {
+		_ = database.CloseConnection()
+	}(&dbConn)
+	if err != nil {
+		setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %s", err))
+		return
+	}
+
+	query := fmt.Sprintf("SELECT email, password FROM users WHERE email='%s' AND password='%s'", email, hashPsw)
+	_, _, errorVar := dbConn.ExecuteQuery(true, query)
+	if errorVar != nil {
+		if errors.Is(errorVar, sql.ErrNoRows) {
+			setResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
+			return
+		} else {
+			setResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in SELECT users, error in connecting to database: %s", errorVar))
+			return
+		}
+	}
+
+	tokenExpireTime := time.Now().Add(72 * time.Hour) // 3 days from now
+
+	// Create the payload
+	payload := jwt.MapClaims{
+		"email": email,
+		"exp":   tokenExpireTime.Unix(),
+	}
+
+	// Create the JWT token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+
+	// Sign the token with the hashed password
+	tokenString, err := token.SignedString([]byte(hashPsw))
+	if err != nil {
+		fmt.Println("Error in signing JWT Token:", err)
+		return
+	}
+
+	setResponseMessage(writer, http.StatusOK, fmt.Sprintf("Login successfully made! JWT Token: %s", tokenString))
+	return
 }
 
 func registerHandler(writer http.ResponseWriter, request *http.Request) {
@@ -160,7 +227,7 @@ func serveAPIgateway() {
 	router := mux.NewRouter()
 	router.HandleFunc("/login", loginHandler).Methods("POST")
 	router.HandleFunc("/register", registerHandler).Methods("POST")
-	router.HandleFunc("/delete_account", deleteAccountHandler).Methods("POST")
+	//router.HandleFunc("/delete_account", deleteAccountHandler).Methods("POST")
 	log.SetPrefix("[ERROR]")
 	log.Fatalln(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }
