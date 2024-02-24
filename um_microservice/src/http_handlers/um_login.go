@@ -10,37 +10,37 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"um_microservice/src/types"
-	"um_microservice/src/utils"
+	umTypes "um_microservice/src/types"
+	umUtils "um_microservice/src/utils"
 )
 
 func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 
 	if request.Method != http.MethodPost {
-		utils.SetResponseMessage(writer, http.StatusMethodNotAllowed, "Method not allowed")
+		umUtils.SetResponseMessage(writer, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	if contentType := request.Header.Get("Content-Type"); !strings.Contains(contentType, "application/json") {
-		utils.SetResponseMessage(writer, http.StatusBadRequest, "Error: the request must be in JSON format")
+		umUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error: the request must be in JSON format")
 		return
 	}
-	var cred utils.Credentials
+	var cred umUtils.Credentials
 	err := json.NewDecoder(request.Body).Decode(&cred)
 	if err != nil {
-		utils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %v", err))
+		umUtils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %v", err))
 		return
 	}
 	email := cred.Email
 	password := cred.Password
-	hashPsw := utils.CalculateHash(password)
-	var dbConn types.DatabaseConnector
-	_, err = dbConn.StartDBConnection(utils.DBConnString)
-	defer func(database *types.DatabaseConnector) {
+	hashPsw := umUtils.CalculateHash(password)
+	var dbConn umTypes.DatabaseConnector
+	_, err = dbConn.StartDBConnection(umUtils.DBConnString)
+	defer func(database *umTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		utils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
+		umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
 		return
 	}
 
@@ -48,15 +48,15 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 	_, _, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
-			utils.SetResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
+			umUtils.SetResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
 			return
 		} else {
-			utils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in select from DB table 'users': %v", errorVar))
+			umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in select from DB table 'users': %v", errorVar))
 			return
 		}
 	}
 
-	tokenExpireTime := time.Now().Add(time.Duration(utils.HourTokenExpiration) * time.Hour) // 3 days from now
+	tokenExpireTime := time.Now().Add(time.Duration(umUtils.HourTokenExpiration) * time.Hour) // 3 days from now
 
 	// create the payload
 	payload := jwt.MapClaims{
@@ -75,6 +75,6 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	utils.SetResponseMessage(writer, http.StatusOK, fmt.Sprintf("Login successfully made! JWT Token: %s", tokenString))
+	umUtils.SetResponseMessage(writer, http.StatusOK, fmt.Sprintf("Login successfully made! JWT Token: %s", tokenString))
 	return
 }

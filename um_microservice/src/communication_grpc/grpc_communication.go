@@ -12,8 +12,8 @@ import (
 	"strconv"
 	notifierUm "um_microservice/proto/notifier_um"
 	wmsUm "um_microservice/proto/wms_um"
-	"um_microservice/src/types"
-	"um_microservice/src/utils"
+	umTypes "um_microservice/src/types"
+	umUtils "um_microservice/src/utils"
 )
 
 type UmNotifierServer struct {
@@ -35,7 +35,7 @@ func DeleteUserConstraintsByUserId(userId string) error {
 	}
 
 	// start connection to gRPC server
-	conn, errV := grpc.Dial(utils.WmsIpPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, errV := grpc.Dial(umUtils.WmsIpPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer func(conn *grpc.ClientConn) {
 		_ = conn.Close()
 	}(conn)
@@ -82,9 +82,9 @@ func (s *UmNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wms
 	}
 
 	// Retrieve user's password from DB in oder to verifying JWT Token and authenticate him
-	var dbConn types.DatabaseConnector
-	_, err = dbConn.StartDBConnection(utils.DBConnString)
-	defer func(database *types.DatabaseConnector) {
+	var dbConn umTypes.DatabaseConnector
+	_, err = dbConn.StartDBConnection(umUtils.DBConnString)
+	defer func(database *umTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
@@ -131,9 +131,9 @@ func (s *UmNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wms
 
 func (s *UmNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Request) (*notifierUm.Reply, error) {
 
-	var dbConn types.DatabaseConnector
-	_, err := dbConn.StartDBConnection(utils.DBConnString)
-	defer func(database *types.DatabaseConnector) {
+	var dbConn umTypes.DatabaseConnector
+	_, err := dbConn.StartDBConnection(umUtils.DBConnString)
+	defer func(database *umTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 	"time"
 	wmsUm "wms_microservice/proto"
 	grpcC "wms_microservice/src/communication_grpc"
-	"wms_microservice/src/types"
+	wmsTypes "wms_microservice/src/types"
 )
 
 var wg sync.WaitGroup
@@ -46,17 +46,17 @@ func serveUm() {
 
 func main() {
 
-	siInstance := types.NewSecretInitializer()
+	siInstance := wmsTypes.NewSecretInitializer()
 	siInstance.InitSecrets()
 
 	log.SetPrefix("[INFO] ")
 	log.Println("ENV variables initialization done!")
 
 	// Creating table 'location' and 'user_constraints' if not exist
-	var dbConn types.DatabaseConnector
+	var dbConn wmsTypes.DatabaseConnector
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
 	_, err := dbConn.StartDBConnection(dataSource)
-	defer func(database *types.DatabaseConnector) {
+	defer func(database *wmsTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {

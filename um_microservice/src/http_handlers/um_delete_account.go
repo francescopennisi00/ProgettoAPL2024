@@ -8,37 +8,37 @@ import (
 	"net/http"
 	"strings"
 	grpcC "um_microservice/src/communication_grpc"
-	"um_microservice/src/types"
-	"um_microservice/src/utils"
+	umTypes "um_microservice/src/types"
+	umUtils "um_microservice/src/utils"
 )
 
 func DeleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 
 	if request.Method != http.MethodPost {
-		utils.SetResponseMessage(writer, http.StatusMethodNotAllowed, "Method not allowed")
+		umUtils.SetResponseMessage(writer, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	if contentType := request.Header.Get("Content-Type"); !strings.Contains(contentType, "application/json") {
-		utils.SetResponseMessage(writer, http.StatusBadRequest, "Error: the request must be in JSON format")
+		umUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error: the request must be in JSON format")
 		return
 	}
-	var cred utils.Credentials
+	var cred umUtils.Credentials
 	err := json.NewDecoder(request.Body).Decode(&cred)
 	if err != nil {
-		utils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %v", err))
+		umUtils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %v", err))
 		return
 	}
 	email := cred.Email
 	password := cred.Password
-	hashPsw := utils.CalculateHash(password)
-	var dbConn types.DatabaseConnector
-	_, err = dbConn.StartDBConnection(utils.DBConnString)
-	defer func(database *types.DatabaseConnector) {
+	hashPsw := umUtils.CalculateHash(password)
+	var dbConn umTypes.DatabaseConnector
+	_, err = dbConn.StartDBConnection(umUtils.DBConnString)
+	defer func(database *umTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		utils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
+		umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
 		return
 	}
 
@@ -46,10 +46,10 @@ func DeleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 	_, row, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
-			utils.SetResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
+			umUtils.SetResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
 			return
 		} else {
-			utils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in select from DB table 'users': %v", errorVar))
+			umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in select from DB table 'users': %v", errorVar))
 			return
 		}
 	}
@@ -59,13 +59,13 @@ func DeleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 		query := fmt.Sprintf("DELETE FROM users WHERE email='%s' and password='%s'", email, hashPsw)
 		_, _, errV := dbConn.ExecuteQuery(query)
 		if errV != nil {
-			utils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database delete: %v", err))
+			umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database delete: %v", err))
 			return
 		} else {
-			utils.SetResponseMessage(writer, http.StatusOK, "Account deleted with relative user constraints!")
+			umUtils.SetResponseMessage(writer, http.StatusOK, "Account deleted with relative user constraints!")
 			return
 		}
 	}
-	utils.SetResponseMessage(writer, http.StatusInternalServerError, "Error in gRPC communication, account not deleted")
+	umUtils.SetResponseMessage(writer, http.StatusInternalServerError, "Error in gRPC communication, account not deleted")
 	return
 }

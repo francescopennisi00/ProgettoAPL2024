@@ -14,15 +14,15 @@ import (
 	wmsUm "um_microservice/proto/wms_um"
 	grpcC "um_microservice/src/communication_grpc"
 	httpC "um_microservice/src/http_handlers"
-	"um_microservice/src/types"
-	"um_microservice/src/utils"
+	umTypes "um_microservice/src/types"
+	umUtils "um_microservice/src/utils"
 )
 
 var wg sync.WaitGroup
 
 var (
-	portWMS      = flag.Int("portWMS", utils.PortWMS, "The server port for WMS")
-	portNotifier = flag.Int("portNotifier", utils.PortNotifier, "The server port for Notifier")
+	portWMS      = flag.Int("portWMS", umUtils.PortWMS, "The server port for WMS")
+	portNotifier = flag.Int("portNotifier", umUtils.PortNotifier, "The server port for Notifier")
 )
 
 func serveWMS() {
@@ -63,7 +63,7 @@ func serveNotifier() {
 
 func serveAPIGateway() {
 	defer wg.Done()
-	port := utils.PortAPIGateway
+	port := umUtils.PortAPIGateway
 
 	hostname, _ := os.Hostname()
 	log.SetPrefix("[INFO] ")
@@ -79,16 +79,16 @@ func serveAPIGateway() {
 
 func main() {
 
-	siInstance := types.NewSecretInitializer()
+	siInstance := umTypes.NewSecretInitializer()
 	siInstance.InitSecrets()
 
 	log.SetPrefix("[INFO] ")
 	log.Println("ENV variables initialization done!")
 
 	// Creating table 'users' if not exits
-	var dbConn types.DatabaseConnector
-	_, err := dbConn.StartDBConnection(utils.DBConnString)
-	defer func(database *types.DatabaseConnector) {
+	var dbConn umTypes.DatabaseConnector
+	_, err := dbConn.StartDBConnection(umUtils.DBConnString)
+	defer func(database *umTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
