@@ -6,18 +6,18 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
-	"os"
 	"sync"
 	"time"
 	wmsUm "wms_microservice/wms-proto"
 	grpcC "wms_microservice/wms-src/wms-communication_grpc"
 	wmsTypes "wms_microservice/wms-src/wms-types"
+	wmsUtils "wms_microservice/wms-src/wms-utils"
 )
 
 var wg sync.WaitGroup
 
 var (
-	portUm = flag.Int("portUm", 50052, "The server port for UM")
+	portUm = flag.Int("portUM", wmsUtils.PortUM, "The server port for UM")
 )
 
 func timer(duration time.Duration, event chan<- bool) {
@@ -26,6 +26,7 @@ func timer(duration time.Duration, event chan<- bool) {
 		event <- true
 	}
 }
+
 func serveUm() {
 	defer wg.Done()
 	flag.Parse()
@@ -54,8 +55,7 @@ func main() {
 
 	// Creating table 'location' and 'user_constraints' if not exist
 	var dbConn wmsTypes.DatabaseConnector
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	_, err := dbConn.StartDBConnection(dataSource)
+	_, err := dbConn.StartDBConnection(wmsUtils.DBConnString)
 	defer func(database *wmsTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
@@ -88,7 +88,7 @@ func main() {
 
 	log.Println("Starting timer goroutine!")
 	expiredTimerEvent := make(chan bool)
-	go timer(60*time.Second, expiredTimerEvent)
+	go timer(wmsUtils.TriggerPeriodTimer, expiredTimerEvent)
 
 	for {
 		// Wait for expired timer event

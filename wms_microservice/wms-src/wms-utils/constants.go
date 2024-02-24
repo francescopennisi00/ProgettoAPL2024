@@ -3,6 +3,7 @@ package wms_utils
 import (
 	"fmt"
 	"os"
+	"time"
 )
 
 var (
@@ -10,10 +11,9 @@ var (
 )
 
 const (
-	UmIpPort       string = "um-service:50052"
-	PortWMS        int    = 50052
-	PortNotifier   int    = 50051
-	PortAPIGateway string = "50053"
-
-	DBDriver string = "mysql"
+	UmIpPort           string = "um-service:50052"
+	PortUM             int    = 50052
+	PortAPIGateway     string = "50053"
+	DBDriver           string = "mysql"
+	TriggerPeriodTimer        = 60 * time.Second
 )
