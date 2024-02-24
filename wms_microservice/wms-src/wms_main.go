@@ -76,7 +76,11 @@ func main() {
 		log.Fatalf("Exit after DB error in creating 'user_constraints' table: %v\n", err)
 	}
 
-	// TODO Kafka Producer inizialization
+	// create Kafka topic
+	kafkaProducer := wmsTypes.NewKafkaProducer(wmsUtils.KafkaBootstrapServer, wmsUtils.KafkaAcksProducerParameter)
+	kafkaProducer.CreateTopic(wmsUtils.KafkaBootstrapServer, wmsUtils.KafkaTopicName)
+
+	//TODO check in DB in order to find events to send
 
 	log.SetPrefix("[INFO] ")
 	log.Println("Starting serving API gateway goroutine!")

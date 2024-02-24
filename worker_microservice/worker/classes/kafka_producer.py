@@ -9,10 +9,9 @@ from worker.utils.logger import logger
 
 class KafkaProducer:
 
-    def __init__(self, bootstrap_servers, group_id, acks):
+    def __init__(self, bootstrap_servers, acks):
         self._producer = confluent_kafka.Producer({
             'bootstrap.servers': bootstrap_servers,
-            'group.id': group_id,
             'acks': acks
         })
 
