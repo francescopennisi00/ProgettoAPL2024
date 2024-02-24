@@ -74,6 +74,12 @@ func (kp *KafkaProducer) CreateTopic(broker, topicName string) {
 // delivered or permanently failed delivery.
 func deliveryCallback(ack *kafka.Message) error {
 	//TODO implement this!!!
+	if ack.TopicPartition.Error != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("Delivery failed: %v\n", ack.TopicPartition.Error)
+		return ack.TopicPartition.Error
+	}
+	//TODO complete this!!!
 	return nil
 }
 
