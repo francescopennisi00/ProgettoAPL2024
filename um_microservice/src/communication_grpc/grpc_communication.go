@@ -9,11 +9,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
-	"os"
 	"strconv"
 	notifierUm "um_microservice/proto/notifier_um"
 	wmsUm "um_microservice/proto/wms_um"
 	"um_microservice/src/types"
+	"um_microservice/src/utils"
 )
 
 type UmNotifierServer struct {
@@ -35,7 +35,7 @@ func DeleteUserConstraintsByUserId(userId string) error {
 	}
 
 	// start connection to gRPC server
-	conn, errV := grpc.Dial("wms-service:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, errV := grpc.Dial(utils.WmsIpPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer func(conn *grpc.ClientConn) {
 		_ = conn.Close()
 	}(conn)
@@ -83,8 +83,7 @@ func (s *UmNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wms
 
 	// Retrieve user's password from DB in oder to verifying JWT Token and authenticate him
 	var dbConn types.DatabaseConnector
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	_, err = dbConn.StartDBConnection(dataSource)
+	_, err = dbConn.StartDBConnection(utils.DBConnString)
 	defer func(database *types.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
@@ -133,8 +132,7 @@ func (s *UmNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wms
 func (s *UmNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Request) (*notifierUm.Reply, error) {
 
 	var dbConn types.DatabaseConnector
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	_, err := dbConn.StartDBConnection(dataSource)
+	_, err := dbConn.StartDBConnection(utils.DBConnString)
 	defer func(database *types.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"um_microservice/src/types"
 	"um_microservice/src/utils"
@@ -32,8 +31,7 @@ func RegisterHandler(writer http.ResponseWriter, request *http.Request) {
 	email := cred.Email
 	password := cred.Password
 	var dbConn types.DatabaseConnector
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	_, err = dbConn.StartDBConnection(dataSource)
+	_, err = dbConn.StartDBConnection(utils.DBConnString)
 	defer func(database *types.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)

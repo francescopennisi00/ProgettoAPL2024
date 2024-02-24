@@ -15,13 +15,14 @@ import (
 	grpcC "um_microservice/src/communication_grpc"
 	httpC "um_microservice/src/http_handlers"
 	"um_microservice/src/types"
+	"um_microservice/src/utils"
 )
 
 var wg sync.WaitGroup
 
 var (
-	portWMS      = flag.Int("portWMS", 50052, "The server port for WMS")
-	portNotifier = flag.Int("port", 50051, "The server port for Notifier")
+	portWMS      = flag.Int("portWMS", utils.PortWMS, "The server port for WMS")
+	portNotifier = flag.Int("portNotifier", utils.PortNotifier, "The server port for Notifier")
 )
 
 func serveWMS() {
@@ -62,7 +63,7 @@ func serveNotifier() {
 
 func serveAPIGateway() {
 	defer wg.Done()
-	port := "50053"
+	port := utils.PortAPIGateway
 
 	hostname, _ := os.Hostname()
 	log.SetPrefix("[INFO] ")
@@ -86,8 +87,7 @@ func main() {
 
 	// Creating table 'users' if not exits
 	var dbConn types.DatabaseConnector
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	_, err := dbConn.StartDBConnection(dataSource)
+	_, err := dbConn.StartDBConnection(utils.DBConnString)
 	defer func(database *types.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
@@ -104,13 +104,13 @@ func main() {
 	}
 
 	log.SetPrefix("[INFO] ")
-	log.Println("Starting notifier serving goroutine!")
+	log.Println("Starting serving Notifier goroutine!")
 	go serveNotifier()
 	log.SetPrefix("[INFO] ")
-	log.Println("Starting API gateway serving goroutine!")
+	log.Println("Starting serving API gateway goroutine!")
 	go serveAPIGateway()
 	log.SetPrefix("[INFO] ")
-	log.Println("Starting WMS serving goroutine!")
+	log.Println("Starting serving WMS goroutine!")
 	go serveWMS()
 	wg.Add(3)
 	wg.Wait()

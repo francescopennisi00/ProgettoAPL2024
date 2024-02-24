@@ -8,7 +8,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 	"um_microservice/src/types"
@@ -36,8 +35,7 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 	password := cred.Password
 	hashPsw := utils.CalculateHash(password)
 	var dbConn types.DatabaseConnector
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	_, err = dbConn.StartDBConnection(dataSource)
+	_, err = dbConn.StartDBConnection(utils.DBConnString)
 	defer func(database *types.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
@@ -58,18 +56,18 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	tokenExpireTime := time.Now().Add(72 * time.Hour) // 3 days from now
+	tokenExpireTime := time.Now().Add(time.Duration(utils.HourTokenExpiration) * time.Hour) // 3 days from now
 
-	// Create the payload
+	// create the payload
 	payload := jwt.MapClaims{
 		"email": email,
 		"exp":   tokenExpireTime.Unix(),
 	}
 
-	// Create the JWT token
+	// create the JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 
-	// Sign the token with the hashed password
+	// sign the token with the hashed password
 	tokenString, errV := token.SignedString([]byte(hashPsw))
 	if errV != nil {
 		log.SetPrefix("[ERROR] ")

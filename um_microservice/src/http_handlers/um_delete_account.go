@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	grpcC "um_microservice/src/communication_grpc"
 	"um_microservice/src/types"
@@ -34,8 +33,7 @@ func DeleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 	password := cred.Password
 	hashPsw := utils.CalculateHash(password)
 	var dbConn types.DatabaseConnector
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	_, err = dbConn.StartDBConnection(dataSource)
+	_, err = dbConn.StartDBConnection(utils.DBConnString)
 	defer func(database *types.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)

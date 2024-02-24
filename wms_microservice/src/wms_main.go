@@ -52,7 +52,7 @@ func main() {
 	log.SetPrefix("[INFO] ")
 	log.Println("ENV variables initialization done!")
 
-	// Creating table 'users' if not exits
+	// Creating table 'location' and 'user_constraints' if not exist
 	var dbConn types.DatabaseConnector
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
 	_, err := dbConn.StartDBConnection(dataSource)
@@ -63,29 +63,30 @@ func main() {
 		log.SetPrefix("[ERROR] ")
 		log.Fatalf("Exit after DB connection error! -> %s\n", err)
 	}
-
 	query := "CREATE TABLE IF NOT EXISTS locations (id INTEGER PRIMARY KEY AUTO_INCREMENT, location_name VARCHAR(100) NOT NULL, latitude FLOAT NOT NULL, longitude FLOAT NOT NULL, country_code VARCHAR(10) NOT NULL, state_code VARCHAR(70) NOT NULL, UNIQUE KEY location_tuple (location_name, latitude, longitude));"
 	_, _, err = dbConn.ExecuteQuery(query)
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Fatalf("Exit after DB error in creating 'users' table: %v\n", err)
+		log.Fatalf("Exit after DB error in creating 'locations' table: %v\n", err)
 	}
 	query = "CREATE TABLE IF NOT EXISTS user_constraints (id INTEGER PRIMARY KEY AUTO_INCREMENT, user_id INTEGER NOT NULL, location_id INTEGER NOT NULL, rules JSON NOT NULL, time_stamp TIMESTAMP NOT NULL, trigger_period INTEGER NOT NULL, checked BOOLEAN NOT NULL DEFAULT FALSE, FOREIGN KEY (location_id) REFERENCES locations(id), UNIQUE KEY user_location_id (user_id, location_id));"
 	_, _, err = dbConn.ExecuteQuery(query)
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Fatalf("Exit after DB error in creating 'users' table: %v\n", err)
+		log.Fatalf("Exit after DB error in creating 'user_constraints' table: %v\n", err)
 	}
 
 	// TODO Kafka Producer inizialization
 
 	log.SetPrefix("[INFO] ")
-	log.Println("Starting serving goroutine!")
+	log.Println("Starting serving API gateway goroutine!")
 	// TODO APIGateway?
 	// go serveAPIGateway()
+	log.SetPrefix("[INFO] ")
+	log.Println("Starting serving UM goroutine!")
 	go serveUm()
 
-	log.Println("Starting timer thread!")
+	log.Println("Starting timer goroutine!")
 	expiredTimerEvent := make(chan bool)
 	go timer(60*time.Second, expiredTimerEvent)
 
