@@ -44,7 +44,7 @@ func DeleteUserConstraintsByUserId(userId string) error {
 	}
 	client := wmsUm.NewWMSUmClient(conn)
 
-	response, errVar := client.RequestDeleteUser_Constraints(context.Background(), &wmsUm.User{UserId: num})
+	response, errVar := client.RequestDeleteUserConstraints(context.Background(), &wmsUm.User{UserId: num})
 	if errVar != nil {
 		return errVar
 	}

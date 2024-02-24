@@ -105,9 +105,12 @@ func main() {
 
 	log.SetPrefix("[INFO] ")
 	log.Println("Starting notifier serving goroutine!")
-
 	go serveNotifier()
+	log.SetPrefix("[INFO] ")
+	log.Println("Starting API gateway serving goroutine!")
 	go serveAPIGateway()
+	log.SetPrefix("[INFO] ")
+	log.Println("Starting WMS serving goroutine!")
 	go serveWMS()
 	wg.Add(3)
 	wg.Wait()

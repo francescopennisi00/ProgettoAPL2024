@@ -1,4 +1,4 @@
-package wms_microservice
+package main
 
 import (
 	"flag"
@@ -35,7 +35,7 @@ func serveUm() {
 		log.Fatalf("Failed to listen to requests from Um: %v\n", err)
 	}
 	wmsServer := grpc.NewServer()
-	wmsUm.RegisterWMSUmServer(wmsServer, &grpcC.UmWmsServer{})
+	wmsUm.RegisterWMSUmServer(wmsServer, &grpcC.WmsUmServer{})
 	log.SetPrefix("[INFO] ")
 	log.Printf("UM server listening at %v\n", lis.Addr())
 	if err := wmsServer.Serve(lis); err != nil {

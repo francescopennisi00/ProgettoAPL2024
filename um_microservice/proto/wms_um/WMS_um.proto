@@ -4,7 +4,7 @@ package WMS_um;
 
 service WMSUm {
   rpc RequestUserIdViaJWTToken (Request) returns (Reply) {}
-  rpc RequestDeleteUser_Constraints (User) returns (ResponseCode) {}
+  rpc RequestDeleteUserConstraints (User) returns (ResponseCode) {}
 }
 
 message User{

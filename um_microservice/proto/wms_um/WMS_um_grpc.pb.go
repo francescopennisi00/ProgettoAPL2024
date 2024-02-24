@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WMSUmClient interface {
 	RequestUserIdViaJWTToken(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Reply, error)
-	RequestDeleteUser_Constraints(ctx context.Context, in *User, opts ...grpc.CallOption) (*ResponseCode, error)
+	RequestDeleteUserConstraints(ctx context.Context, in *User, opts ...grpc.CallOption) (*ResponseCode, error)
 }
 
 type wMSUmClient struct {
@@ -43,9 +43,9 @@ func (c *wMSUmClient) RequestUserIdViaJWTToken(ctx context.Context, in *Request,
 	return out, nil
 }
 
-func (c *wMSUmClient) RequestDeleteUser_Constraints(ctx context.Context, in *User, opts ...grpc.CallOption) (*ResponseCode, error) {
+func (c *wMSUmClient) RequestDeleteUserConstraints(ctx context.Context, in *User, opts ...grpc.CallOption) (*ResponseCode, error) {
 	out := new(ResponseCode)
-	err := c.cc.Invoke(ctx, "/WMS_um.WMSUm/RequestDeleteUser_Constraints", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/WMS_um.WMSUm/RequestDeleteUserConstraints", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (c *wMSUmClient) RequestDeleteUser_Constraints(ctx context.Context, in *Use
 // for forward compatibility
 type WMSUmServer interface {
 	RequestUserIdViaJWTToken(context.Context, *Request) (*Reply, error)
-	RequestDeleteUser_Constraints(context.Context, *User) (*ResponseCode, error)
+	RequestDeleteUserConstraints(context.Context, *User) (*ResponseCode, error)
 	mustEmbedUnimplementedWMSUmServer()
 }
 
@@ -68,8 +68,8 @@ type UnimplementedWMSUmServer struct {
 func (UnimplementedWMSUmServer) RequestUserIdViaJWTToken(context.Context, *Request) (*Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestUserIdViaJWTToken not implemented")
 }
-func (UnimplementedWMSUmServer) RequestDeleteUser_Constraints(context.Context, *User) (*ResponseCode, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RequestDeleteUser_Constraints not implemented")
+func (UnimplementedWMSUmServer) RequestDeleteUserConstraints(context.Context, *User) (*ResponseCode, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestDeleteUserConstraints not implemented")
 }
 func (UnimplementedWMSUmServer) mustEmbedUnimplementedWMSUmServer() {}
 
@@ -102,20 +102,20 @@ func _WMSUm_RequestUserIdViaJWTToken_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WMSUm_RequestDeleteUser_Constraints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WMSUm_RequestDeleteUserConstraints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(User)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WMSUmServer).RequestDeleteUser_Constraints(ctx, in)
+		return srv.(WMSUmServer).RequestDeleteUserConstraints(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/WMS_um.WMSUm/RequestDeleteUser_Constraints",
+		FullMethod: "/WMS_um.WMSUm/RequestDeleteUserConstraints",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WMSUmServer).RequestDeleteUser_Constraints(ctx, req.(*User))
+		return srv.(WMSUmServer).RequestDeleteUserConstraints(ctx, req.(*User))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -132,8 +132,8 @@ var WMSUm_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _WMSUm_RequestUserIdViaJWTToken_Handler,
 		},
 		{
-			MethodName: "RequestDeleteUser_Constraints",
-			Handler:    _WMSUm_RequestDeleteUser_Constraints_Handler,
+			MethodName: "RequestDeleteUserConstraints",
+			Handler:    _WMSUm_RequestDeleteUserConstraints_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
