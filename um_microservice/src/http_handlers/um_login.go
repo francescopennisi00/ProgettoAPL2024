@@ -47,7 +47,7 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	query := fmt.Sprintf("SELECT email, password FROM users WHERE email='%s' AND password='%s'", email, hashPsw)
-	_, _, errorVar := dbConn.ExecuteQuery(query, true)
+	_, _, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			utils.SetResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")

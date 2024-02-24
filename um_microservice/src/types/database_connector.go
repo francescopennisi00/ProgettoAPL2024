@@ -38,45 +38,58 @@ func (database *DatabaseConnector) CloseConnection() error {
 	return nil
 }
 
-func (database *DatabaseConnector) ExecuteQuery(query string, fetchOne ...bool) (outcome sql.Result, results []string, resErr error) {
-
-	//default value of fetchOne is false
-	if len(fetchOne) == 0 {
-		fetchOne = append(fetchOne, false)
-	}
+func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Result, results [][]string, resErr error) {
 
 	if database.dbConn != nil {
-		results = make([]string, 0)
-		var result string
+
 		if strings.HasPrefix(query, "SELECT ") {
-			if fetchOne[0] == true {
-				err := database.dbConn.QueryRow(query).Scan(&result)
-				log.SetPrefix("[INFO] ")
-				log.Printf("RESULT: %s\n", result)
-				results = append(results, result)
-				if err != nil {
-					return nil, results, err
-				} else {
-					return nil, results, nil
-				}
-			} else {
-				res, err := database.dbConn.Query(query)
-				if err != nil {
-					return nil, results, nil
-				}
-				i := 0
-				for res.Next() {
-					errorVar := res.Scan(&result)
-					log.SetPrefix("[INFO] ")
-					log.Printf("RESULT[%d]: %s\n", i, result)
-					results = append(results, result)
-					if errorVar != nil {
-						return nil, results, errorVar
-					}
-					i++
-				}
+
+			// result is a []string variable for generic row, while named return parameter results is a
+			// [][]string and contains all the rows of the query result
+			var result []string
+
+			// execute query and put rows into res
+			res, err := database.dbConn.Query(query)
+			if err != nil {
 				return nil, results, nil
 			}
+
+			// extract column names in order to know the number of columns
+			columns, errCol := res.Columns()
+			if errCol != nil {
+				return nil, results, err
+			}
+
+			// create a pointers array with the same length of columns number (required for Scan)
+			pointers := make([]interface{}, len(columns))
+			for j := range pointers {
+				pointers[j] = new(string)
+			}
+
+			// row index (initially 0)
+			i := 0
+
+			// managing rows
+			for res.Next() {
+				errorVar := res.Scan(pointers...) //scan of the whole row
+				if errorVar != nil {
+					return nil, results, errorVar
+				}
+				// extract values stored in pointers and add then to result
+				for _, pointer := range pointers {
+					result = append(result, *pointer.(*string))
+				}
+
+				log.Printf("RESULT[%d]: ", i)
+				for _, item := range result {
+					log.Printf("%s - ", item)
+				}
+				// append row to rows array ([][]string) to be returned
+				results = append(results, result)
+				i++
+			}
+			return nil, results, nil
+
 		} else {
 			exec, err := database.dbConn.Exec(query)
 			if err != nil {
@@ -85,10 +98,12 @@ func (database *DatabaseConnector) ExecuteQuery(query string, fetchOne ...bool) 
 			return exec, results, nil
 		}
 	}
+
 	log.SetPrefix("[ERROR] ")
 	log.Println("DB connection already closed!")
 	er := sql.ErrConnDone
 	return nil, results, er
+
 }
 
 func (database *DatabaseConnector) BeginTransaction() (*sql.Tx, error) {
@@ -102,7 +117,7 @@ func (database *DatabaseConnector) BeginTransaction() (*sql.Tx, error) {
 	return database.transaction, nil
 }
 
-func (database *DatabaseConnector) ExecIntoTransaction(query string, fetchOne ...bool) (outcome sql.Result, results []string, resErr error) {
+func (database *DatabaseConnector) ExecIntoTransaction(query string, fetchOne ...bool) (outcome sql.Result, results [][]string, resErr error) {
 
 	//default value of fetchOne is false
 	if len(fetchOne) == 0 {
@@ -110,37 +125,53 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string, fetchOne ..
 	}
 
 	if database.transaction != nil {
-		results = make([]string, 0)
-		var result string
 		if strings.HasPrefix(query, "SELECT ") {
-			if fetchOne[0] == true {
-				err := database.transaction.QueryRow(query).Scan(&result)
-				log.SetPrefix("[INFO] ")
-				log.Printf("RESULT: %s\n", result)
-				results = append(results, result)
-				if err != nil {
-					return nil, results, err
-				} else {
-					return nil, results, nil
-				}
-			} else {
-				res, err := database.dbConn.Query(query)
-				if err != nil {
-					return nil, results, nil
-				}
-				i := 0
-				for res.Next() {
-					errorVar := res.Scan(&result)
-					log.SetPrefix("[INFO] ")
-					log.Printf("RESULT[%d]: %s\n", i, result)
-					results = append(results, result)
-					if errorVar != nil {
-						return nil, results, errorVar
-					}
-					i++
-				}
+
+			// result is a []string variable for generic row, while named return parameter results is a
+			// [][]string and contains all the rows of the query result
+			var result []string
+
+			// execute query and put rows into res
+			res, err := database.dbConn.Query(query)
+			if err != nil {
 				return nil, results, nil
 			}
+
+			// extract column names in order to know the number of columns
+			columns, errCol := res.Columns()
+			if errCol != nil {
+				return nil, results, err
+			}
+
+			// create a pointers array with the same length of columns number (required for Scan)
+			pointers := make([]interface{}, len(columns))
+			for j := range pointers {
+				pointers[j] = new(string)
+			}
+
+			// row index (initially 0)
+			i := 0
+
+			// managing rows
+			for res.Next() {
+				errorVar := res.Scan(pointers...) //scan of the whole row
+				if errorVar != nil {
+					return nil, results, errorVar
+				}
+				// extract values stored in pointers and add then to result
+				for _, pointer := range pointers {
+					result = append(result, *pointer.(*string))
+				}
+
+				log.Printf("RESULT[%d]: ", i)
+				for _, item := range result {
+					log.Printf("%s - ", item)
+				}
+				// append row to rows array ([][]string) to be returned
+				results = append(results, result)
+				i++
+			}
+			return nil, results, nil
 		} else {
 			exec, err := database.dbConn.Exec(query)
 			if err != nil {

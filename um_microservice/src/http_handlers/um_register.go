@@ -43,7 +43,7 @@ func RegisterHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	query := fmt.Sprintf("SELECT email FROM users WHERE email='%s'", email)
-	_, _, errorVar := dbConn.ExecuteQuery(query, true)
+	_, _, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			// if there is no row this means that the user is not yet registered

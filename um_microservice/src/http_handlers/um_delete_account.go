@@ -45,7 +45,7 @@ func DeleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	query := fmt.Sprintf("SELECT id, email, password FROM users WHERE email='%s' and password='%s'", email, hashPsw)
-	_, row, errorVar := dbConn.ExecuteQuery(query, true)
+	_, row, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			utils.SetResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
@@ -56,7 +56,7 @@ func DeleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	result := grpcC.DeleteUserConstraintsByUserId(row[0])
+	result := grpcC.DeleteUserConstraintsByUserId(row[0][0])
 	if result == nil {
 		query := fmt.Sprintf("DELETE FROM users WHERE email='%s' and password='%s'", email, hashPsw)
 		_, _, errV := dbConn.ExecuteQuery(query)

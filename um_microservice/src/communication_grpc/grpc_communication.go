@@ -93,7 +93,7 @@ func (s *UmNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wms
 		log.Printf("DB connection error! -> %v\n", err)
 	}
 	query := fmt.Sprintf("SELECT id, password FROM users WHERE email= %s", email)
-	_, row, errV := dbConn.ExecuteQuery(query, true)
+	_, row, errV := dbConn.ExecuteQuery(query)
 	if errV != nil {
 		if errors.Is(errV, sql.ErrNoRows) {
 			return &wmsUm.Reply{UserId: -3}, nil // token is not valid: email not present
@@ -105,14 +105,14 @@ func (s *UmNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wms
 
 	//convert user id from string to int64
 	var idUser int64
-	idUser, err = strconv.ParseInt(row[0], 10, 64)
+	idUser, err = strconv.ParseInt(row[0][0], 10, 64)
 	if err != nil {
 		fmt.Printf("Error: user id returned by DB is not an integer: -> %v\n", err)
 		return nil, err
 	}
 
 	//password is already a string: no conversion is needed
-	password := row[1]
+	password := row[0][1]
 
 	// verify JWT Token with password as secret
 	token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -144,7 +144,7 @@ func (s *UmNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Requ
 
 	userId := in.UserId
 	query := fmt.Sprintf("SELECT email FROM users WHERE id=%d", userId)
-	_, email, errorVar := dbConn.ExecuteQuery(query, true)
+	_, emailRows, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			log.SetPrefix("[INFO] ")
@@ -156,7 +156,7 @@ func (s *UmNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Requ
 			return &notifierUm.Reply{Email: "null"}, errorVar
 		}
 	} else {
-		emailString := email[0]
+		emailString := emailRows[0][0]
 		return &notifierUm.Reply{Email: emailString}, nil
 	}
 }
