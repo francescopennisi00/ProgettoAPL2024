@@ -5,6 +5,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"strings"
+	"um_microservice/src/utils"
 )
 
 type DatabaseConnector struct {
@@ -14,7 +15,7 @@ type DatabaseConnector struct {
 
 func (database *DatabaseConnector) StartDBConnection(dataSource string) (*sql.DB, error) {
 	var err error
-	database.dbConn, err = sql.Open("mysql", dataSource)
+	database.dbConn, err = sql.Open(utils.DBDriver, dataSource)
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Error connecting to the database: %v\n", err)

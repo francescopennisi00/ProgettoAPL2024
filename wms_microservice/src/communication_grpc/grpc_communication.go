@@ -8,10 +8,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
-	"os"
 	"strings"
 	protoBuf "wms_microservice/proto"
-	"wms_microservice/src/types"
+	wmsTypes "wms_microservice/src/types"
+	wmsUtils "wms_microservice/src/utils"
 )
 
 type WmsUmServer struct {
@@ -23,10 +23,9 @@ func (s *WmsUmServer) RequestDeleteUserConstraints(ctx context.Context, in *prot
 	// extracting user id from the request
 	userId := in.GetUserId()
 
-	var dbConn types.DatabaseConnector
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	_, err := dbConn.StartDBConnection(dataSource)
-	defer func(database *types.DatabaseConnector) {
+	var dbConn wmsTypes.DatabaseConnector
+	_, err := dbConn.StartDBConnection(wmsUtils.DBConnString)
+	defer func(database *wmsTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
@@ -54,7 +53,7 @@ func AuthenticateAndRetrieveUserId(authorizationHeader string) (int64, error) {
 	jwtToken := strings.Split(authorizationHeader, " ")[1]
 
 	// start gRPC communication with User Manager in order to retrieve user id
-	conn, errV := grpc.Dial("um-service:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, errV := grpc.Dial(wmsUtils.UmIpPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer func(conn *grpc.ClientConn) {
 		_ = conn.Close()
 	}(conn)
