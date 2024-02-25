@@ -5,4 +5,6 @@ SUBSCRIPTION_TOPIC_NAME = "event_update"
 PUBLICATION_TOPIC_NAME = "event_to_be_notified"
 ACKS_KAFKA_PRODUCER_PARAMETER = 1
 ATTEMPTS = 5
-ENDPOINT_REST_OPEN_WEATHER = f"https://api.openweathermap.org/data/2.5/weather?lat=LATITUDE&lon=LONGITUDE&units=metric&appid=APIKEY"
+ENDPOINT_REST_OPEN_WEATHER = "https://api.openweathermap.org/data/2.5/weather?lat=LATITUDE&lon=LONGITUDE&units=metric&appid=APIKEY"
+NUM_PARTITION = 1
+REPLICATION_FACTOR = 1

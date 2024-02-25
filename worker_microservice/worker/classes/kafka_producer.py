@@ -5,6 +5,7 @@ import confluent_kafka
 from confluent_kafka.admin import AdminClient, NewTopic
 from worker.classes.database_connector import DatabaseConnector
 from worker.utils.logger import logger
+import worker.utils.constants as constants
 
 
 class KafkaProducer:
@@ -33,7 +34,7 @@ class KafkaProducer:
                 found = True
         if not found:
             logger.info(f"TOPIC {topic_name} NOT FOUND: CREATING IT\n")
-            new_topic = NewTopic(topic_name, 1, 1)  # Number-of-partitions = 1, Number-of-replicas = 1
+            new_topic = NewTopic(topic_name, constants.NUM_PARTITION, constants.REPLICATION_FACTOR)
             try:
                 kadmin.create_topics([new_topic,])
                 logger.info("TOPIC CREATION STARTED!\n")

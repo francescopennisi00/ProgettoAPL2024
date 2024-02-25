@@ -141,11 +141,10 @@ if __name__ == "__main__":
     # instantiating Kafka producer instance
     kafka_producer = KafkaProducer(
         bootstrap_servers=constants.BOOTSTRAP_SERVER_KAFKA,
-        group_id=constants.GROUP_ID,
         acks=constants.ACKS_KAFKA_PRODUCER_PARAMETER
     )
 
-    # creation of the topic on which to publish
+    # creation of the topic on which to publish (if not yet exists)
     KafkaProducer.create_topic(constants.BOOTSTRAP_SERVER_KAFKA, constants.PUBLICATION_TOPIC_NAME)
 
     # instantiating Kafka consumer instance
@@ -166,8 +165,9 @@ if __name__ == "__main__":
 
             # call to find_current_work and publish them in topic "event_to_be_sent"
             current_work = find_current_work()
-            if current_work != '{}' and current_work is not False:  # {} is the JSON representation of an empty dictionary.
-                while not kafka_producer.produce_kafka_message(constants.PUBLICATION_TOPIC_NAME, constants.BOOTSTRAP_SERVER_KAFKA, current_work):
+            if current_work != '{}' and current_work is not False:  # {} is the JSON representation of empty dictionary.
+                while not kafka_producer.produce_kafka_message(
+                        constants.PUBLICATION_TOPIC_NAME, constants.BOOTSTRAP_SERVER_KAFKA, current_work):
                     pass
             else:
                 logger.info("There is no backlog of work\n")

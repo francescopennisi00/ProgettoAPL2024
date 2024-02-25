@@ -24,6 +24,7 @@ func NewKafkaProducer(bootstrapServers, acks string) *KafkaProducer {
 	return &KafkaProducer{producer: p}
 }
 
+// CreateTopic create topic if not yet exists
 func (kp *KafkaProducer) CreateTopic(broker, topicName string) {
 	admin, err := kafka.NewAdminClient(&kafka.ConfigMap{"bootstrap.servers": broker})
 	if err != nil {

@@ -76,7 +76,7 @@ func main() {
 		log.Fatalf("Exit after DB error in creating 'user_constraints' table: %v\n", err)
 	}
 
-	// create Kafka topic
+	// create Kafka topic on which to publish (if not yet exists)
 	kafkaProducer := wmsTypes.NewKafkaProducer(wmsUtils.KafkaBootstrapServer, wmsUtils.KafkaAcksProducerParameter)
 	kafkaProducer.CreateTopic(wmsUtils.KafkaBootstrapServer, wmsUtils.KafkaTopicName)
 
