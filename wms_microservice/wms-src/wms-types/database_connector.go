@@ -118,12 +118,7 @@ func (database *DatabaseConnector) BeginTransaction() (*sql.Tx, error) {
 	return database.transaction, nil
 }
 
-func (database *DatabaseConnector) ExecIntoTransaction(query string, fetchOne ...bool) (outcome sql.Result, results [][]string, resErr error) {
-
-	//default value of fetchOne is false
-	if len(fetchOne) == 0 {
-		fetchOne = append(fetchOne, false)
-	}
+func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sql.Result, results [][]string, resErr error) {
 
 	if database.transaction != nil {
 		if strings.HasPrefix(query, "SELECT ") {

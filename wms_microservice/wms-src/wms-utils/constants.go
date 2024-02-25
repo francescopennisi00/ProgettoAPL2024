@@ -23,4 +23,5 @@ const (
 	KafkaTopicReplicationFactor int    = 1
 	KafkaBootstrapServer        string = "kafka-service:9092"
 	KafkaTopicName              string = "event_update"
+	Attempts                    int    = 5
 )

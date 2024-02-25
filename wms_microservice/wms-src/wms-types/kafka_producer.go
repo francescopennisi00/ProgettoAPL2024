@@ -2,6 +2,9 @@ package wms_types
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"log"
 	"time"
@@ -73,15 +76,85 @@ func (kp *KafkaProducer) CreateTopic(broker, topicName string) {
 
 // Optional per-message delivery callback when a message has been successfully
 // delivered or permanently failed delivery.
-func deliveryCallback(ack *kafka.Message) error {
-	//TODO implement this!!!
+// Updating table user_constraints in order to avoid considering again a row in the building of
+// Kafka message to publish in "event_update" topic. In this way, we prevent multiple replication of
+// the WMS from sending the same trigger message to worker
+// The function returns a boolean. Boolean is true if no error occurs or if an error occurs, and it is
+// due a delivery fail and not an internal error
+func deliveryCallback(ack *kafka.Message) bool {
+
 	if ack.TopicPartition.Error != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Delivery failed: %v\n", ack.TopicPartition.Error)
-		return ack.TopicPartition.Error
+		return true
 	}
-	//TODO complete this!!!
-	return nil
+
+	// ack contains message, that is a JSON formatted string received as []byte: we convert it into a Go map
+	var messageDict map[string]interface{}
+	if err := json.Unmarshal(ack.Value, &messageDict); err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("Error decoding message: %v\n", err)
+		return false
+	}
+	log.SetPrefix("[INFO] ")
+	log.Printf("Ack received for message: ")
+	log.Println(messageDict)
+
+	rowsIDList := messageDict["rows_id"].([]interface{})
+
+	// open DB connection in order to update timestamp of the last check for the rules of the ack message
+	var dbConn DatabaseConnector
+	_, err := dbConn.StartDBConnection(wmsUtils.DBConnString)
+	defer func(database *DatabaseConnector) {
+		_ = database.CloseConnection()
+	}(&dbConn)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("DB connection error! -> %s\n", err)
+		return false
+	}
+
+	// we have to commit changes only after the conclusion of the for. So, we start a DB transaction
+	// that we don't commit until the end of the for
+	_, errTr := dbConn.BeginTransaction()
+	if errTr != nil {
+		log.SetPrefix("ERROR ")
+		log.Printf("Error in start DB transaction: %v\n", errTr)
+		return false
+	}
+
+	for _, id := range rowsIDList {
+		// convert id to int
+		idInt, ok := id.(int)
+		if ok {
+			log.SetPrefix("[INFO] ")
+			log.Println("ID in ROWS_ID_LIST: ", id)
+		} else {
+			log.SetPrefix("[ERROR] ")
+			log.Println("ID in ROWS_ID_LIST is not an integer number")
+			_ = dbConn.RollbackTransaction()
+			return false
+		}
+		query := fmt.Sprintf("UPDATE user_constraints SET checked=FALSE WHERE id = %d", idInt)
+		_, _, err := dbConn.ExecIntoTransaction(query)
+		if err != nil {
+			log.SetPrefix("[ERROR] ")
+			log.Printf("Error executing update query: %v\n", err)
+			_ = dbConn.RollbackTransaction()
+			return false
+		}
+	}
+	// now we can commit the transaction
+	errCom := dbConn.CommitTransaction()
+	if errCom != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("Error in commit transaction: %v\n", errCom)
+		return false
+	}
+
+	// if we arrived here all went well
+	return true
+
 }
 
 func (kp *KafkaProducer) ProduceKafkaMessage(topicName string, message string) error {
@@ -96,10 +169,28 @@ func (kp *KafkaProducer) ProduceKafkaMessage(topicName string, message string) e
 		log.Printf("Error producing Kafka message: %v\n", err)
 		return err
 	}
+
 	// wait ack from Kafka broker
 	log.SetPrefix("[INFO] ")
 	log.Println("Waiting for message to be delivered")
 	event := <-deliveryChan
 	ack := event.(*kafka.Message)
-	return deliveryCallback(ack)
+	errorBool := true //we assume that there was an error in updating DB
+
+	// we give some attempts to update timestamp of last check in DB if some internal error occurred
+	// deliveryCallback returns true only if there was a fail in delivery or all went well, while it
+	// returns false if an internal error occurred
+	for i := 0; i < wmsUtils.Attempts; i++ {
+		ok := deliveryCallback(ack)
+		if ok {
+			errorBool = false
+			break
+		}
+	}
+	if errorBool {
+		errReturn := errors.New("error in delivery callback: last check timestamp not updated in DB")
+		return errReturn
+	}
+
+	return nil // all went well and errorBool is false
 }
