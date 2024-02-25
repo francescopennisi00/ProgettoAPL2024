@@ -79,14 +79,12 @@ func (kp *KafkaProducer) CreateTopic(broker, topicName string) {
 // Updating table user_constraints in order to avoid considering again a row in the building of
 // Kafka message to publish in "event_update" topic. In this way, we prevent multiple replication of
 // the WMS from sending the same trigger message to worker
-// The function returns a boolean. Boolean is true if no error occurs or if an error occurs, and it is
-// due a delivery fail and not an internal error
-func deliveryCallback(ack *kafka.Message) bool {
+func deliveryCallback(ack *kafka.Message) error {
 
 	if ack.TopicPartition.Error != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Delivery failed: %v\n", ack.TopicPartition.Error)
-		return true
+		return ack.TopicPartition.Error
 	}
 
 	// ack contains message, that is a JSON formatted string received as []byte: we convert it into a Go map
@@ -94,7 +92,7 @@ func deliveryCallback(ack *kafka.Message) bool {
 	if err := json.Unmarshal(ack.Value, &messageDict); err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Error decoding message: %v\n", err)
-		return false
+		return err
 	}
 	log.SetPrefix("[INFO] ")
 	log.Printf("Ack received for message: ")
@@ -111,7 +109,7 @@ func deliveryCallback(ack *kafka.Message) bool {
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("DB connection error! -> %s\n", err)
-		return false
+		return err
 	}
 
 	// we have to commit changes only after the conclusion of the for. So, we start a DB transaction
@@ -120,7 +118,7 @@ func deliveryCallback(ack *kafka.Message) bool {
 	if errTr != nil {
 		log.SetPrefix("ERROR ")
 		log.Printf("Error in start DB transaction: %v\n", errTr)
-		return false
+		return errTr
 	}
 
 	for _, id := range rowsIDList {
@@ -133,7 +131,8 @@ func deliveryCallback(ack *kafka.Message) bool {
 			log.SetPrefix("[ERROR] ")
 			log.Println("ID in ROWS_ID_LIST is not an integer number")
 			_ = dbConn.RollbackTransaction()
-			return false
+			errConv := errors.New("ID in ROWS_ID_LIST is not an integer number")
+			return errConv
 		}
 		query := fmt.Sprintf("UPDATE user_constraints SET checked=FALSE WHERE id = %d", idInt)
 		_, _, err := dbConn.ExecIntoTransaction(query)
@@ -141,7 +140,7 @@ func deliveryCallback(ack *kafka.Message) bool {
 			log.SetPrefix("[ERROR] ")
 			log.Printf("Error executing update query: %v\n", err)
 			_ = dbConn.RollbackTransaction()
-			return false
+			return err
 		}
 	}
 	// now we can commit the transaction
@@ -149,11 +148,11 @@ func deliveryCallback(ack *kafka.Message) bool {
 	if errCom != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Error in commit transaction: %v\n", errCom)
-		return false
+		return errCom
 	}
 
 	// if we arrived here all went well
-	return true
+	return nil
 
 }
 
@@ -175,22 +174,6 @@ func (kp *KafkaProducer) ProduceKafkaMessage(topicName string, message string) e
 	log.Println("Waiting for message to be delivered")
 	event := <-deliveryChan
 	ack := event.(*kafka.Message)
-	errorBool := true //we assume that there was an error in updating DB
 
-	// we give some attempts to update timestamp of last check in DB if some internal error occurred
-	// deliveryCallback returns true only if there was a fail in delivery or all went well, while it
-	// returns false if an internal error occurred
-	for i := 0; i < wmsUtils.Attempts; i++ {
-		ok := deliveryCallback(ack)
-		if ok {
-			errorBool = false
-			break
-		}
-	}
-	if errorBool {
-		errReturn := errors.New("error in delivery callback: last check timestamp not updated in DB")
-		return errReturn
-	}
-
-	return nil // all went well and errorBool is false
+	return deliveryCallback(ack)
 }
