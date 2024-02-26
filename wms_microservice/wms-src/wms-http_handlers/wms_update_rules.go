@@ -14,7 +14,6 @@ import (
 	wmsUtils "wms_microservice/wms-src/wms-utils"
 )
 
-// UpdateRulesHandler TODO: da rivedere nella gestione del json nel body della request
 func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 
 	if request.Method != http.MethodPost {
