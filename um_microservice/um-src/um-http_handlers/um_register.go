@@ -53,7 +53,7 @@ func RegisterHandler(writer http.ResponseWriter, request *http.Request) {
 				return
 			}
 		} else {
-			umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
+			umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", errorVar))
 			return
 		}
 	} else {

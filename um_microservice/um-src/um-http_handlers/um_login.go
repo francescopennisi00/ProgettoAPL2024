@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -70,8 +69,7 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 	// sign the token with the hashed password
 	tokenString, errV := token.SignedString([]byte(hashPsw))
 	if errV != nil {
-		log.SetPrefix("[ERROR] ")
-		log.Printf("Error in signing JWT Token: %v\n", errV)
+		umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in signing JWT Token: %v\n", errV))
 		return
 	}
 
