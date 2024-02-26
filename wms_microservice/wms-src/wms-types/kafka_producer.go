@@ -40,7 +40,7 @@ func (kp *KafkaProducer) CreateTopic(broker, topicName string) {
 	topicMetadata, errV := admin.GetMetadata(&topicName, false, wmsUtils.TimeoutTopicMetadata)
 	if errV != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Fatalf("Error checking if topic exists: %v", errV)
+		log.Fatalf("Error checking if topic exists: %v\n", errV)
 	}
 
 	// we assume that topic not exists (if it is true we don't enter into for and topicExists remains false)
@@ -62,7 +62,7 @@ func (kp *KafkaProducer) CreateTopic(broker, topicName string) {
 		results, err := admin.CreateTopics(context.Background(), topicSpecs, nil)
 		if err != nil {
 			log.SetPrefix("[ERROR] ")
-			log.Fatalf("Error creating topic %s: %v", topicName, err)
+			log.Fatalf("Error creating topic %s: %v\n", topicName, err)
 		}
 		for _, result := range results {
 			log.SetPrefix("[INFO] ")
@@ -270,25 +270,31 @@ func MakeKafkaMessage(locationId string) (string, error) {
 		}
 	}
 
-	appendIfNotNull("max_temp", maxTempList)
-	appendIfNotNull("min_temp", minTempList)
-	appendIfNotNull("max_humidity", maxHumidityList)
-	appendIfNotNull("min_humidity", minHumidityList)
-	appendIfNotNull("max_pressure", maxPressureList)
-	appendIfNotNull("min_pressure", minPressureList)
-	appendIfNotNull("max_cloud", maxCloudList)
-	appendIfNotNull("min_cloud", minCloudList)
-	appendIfNotNull("max_wind_speed", maxWindSpeedList)
-	appendIfNotNull("min_wind_speed", minWindSpeedList)
-	appendIfNotNull("wind_direction", windDirectionList)
-	appendIfNotNull("rain", rainList)
-	appendIfNotNull("snow", snowList)
+	ruleToListTargetValue := map[string]interface{}{
+		"max_temp":       maxTempList,
+		"min_temp":       minTempList,
+		"max_humidity":   maxHumidityList,
+		"min_humidity":   minHumidityList,
+		"max_pressure":   maxPressureList,
+		"min_pressure":   minPressureList,
+		"max_cloud":      maxCloudList,
+		"min_cloud":      minCloudList,
+		"max_wind_speed": maxWindSpeedList,
+		"min_wind_speed": minWindSpeedList,
+		"wind_direction": windDirectionList,
+		"rain":           rainList,
+		"snow":           snowList,
+	}
 
-	finalJsonBytes, err := json.Marshal(finalJsonMap)
-	if err != nil {
+	for key, value := range ruleToListTargetValue {
+		appendIfNotNull(key, value)
+	}
+
+	finalJsonBytes, errMar := json.Marshal(finalJsonMap)
+	if errMar != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Error during marshaling location info into []byte: %v\n", err)
-		return "", err
+		return "", errMar
 	}
 
 	log.Println("FINAL JSON DICT", string(finalJsonBytes))

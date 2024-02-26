@@ -31,6 +31,7 @@ func (s *WmsUmServer) RequestDeleteUserConstraints(ctx context.Context, in *prot
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("DB connection error! -> %v\n", err)
+		return &protoBuf.ResponseCode{Code: -1}, nil // something went wrong in DB connection
 	}
 	query := fmt.Sprintf("SELECT * FROM user_constraints WHERE user_id= %d", userId)
 	_, _, errV := dbConn.ExecuteQuery(query)
