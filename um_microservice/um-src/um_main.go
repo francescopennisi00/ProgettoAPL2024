@@ -93,7 +93,7 @@ func main() {
 	}(&dbConn)
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Fatalf("Exit after DB connection error! -> %s\n", err)
+		log.Fatalf("Exit after DB connection error! -> %v\n", err)
 	}
 
 	query := "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTO_INCREMENT, email VARCHAR(30) UNIQUE NOT NULL, password VARCHAR(64) NOT NULL)"

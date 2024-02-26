@@ -90,6 +90,7 @@ func (s *UmNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wms
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("DB connection error! -> %v\n", err)
+		return nil, err
 	}
 	query := fmt.Sprintf("SELECT id, password FROM users WHERE email= %s", email)
 	_, row, errV := dbConn.ExecuteQuery(query)

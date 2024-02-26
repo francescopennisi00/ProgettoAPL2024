@@ -61,7 +61,7 @@ func main() {
 	}(&dbConn)
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Fatalf("Exit after DB connection error! -> %s\n", err)
+		log.Fatalf("Exit after DB connection error! -> %v\n", err)
 	}
 	query := "CREATE TABLE IF NOT EXISTS locations (id INTEGER PRIMARY KEY AUTO_INCREMENT, location_name VARCHAR(100) NOT NULL, latitude FLOAT NOT NULL, longitude FLOAT NOT NULL, country_code VARCHAR(10) NOT NULL, state_code VARCHAR(70) NOT NULL, UNIQUE KEY location_tuple (location_name, latitude, longitude));"
 	_, _, err = dbConn.ExecuteQuery(query)

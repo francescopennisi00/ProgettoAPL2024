@@ -66,7 +66,7 @@ func (kp *KafkaProducer) CreateTopic(broker, topicName string) {
 		}
 		for _, result := range results {
 			log.SetPrefix("[INFO] ")
-			log.Printf("Topic %s creation error: %s\n", result.Topic, result.Error)
+			log.Printf("Topic %s creation error: %v\n", result.Topic, result.Error)
 		}
 
 		// Wait for topic creation completion (required in Python, maybe here we can bypass it)
@@ -108,7 +108,7 @@ func deliveryCallback(ack *kafka.Message) error {
 	}(&dbConn)
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Printf("DB connection error! -> %s\n", err)
+		log.Printf("DB connection error! -> %v\n", err)
 		return err
 	}
 
@@ -169,11 +169,128 @@ func (kp *KafkaProducer) ProduceKafkaMessage(topicName string, message string) e
 		return err
 	}
 
-	// wait ack from Kafka broker
+	// wait for ack from Kafka broker
 	log.SetPrefix("[INFO] ")
 	log.Println("Waiting for message to be delivered")
 	event := <-deliveryChan
 	ack := event.(*kafka.Message)
 
 	return deliveryCallback(ack)
+}
+
+func MakeKafkaMessage(locationId string) (string, error) {
+	var (
+		userIDList        []interface{}
+		maxTempList       []interface{}
+		minTempList       []interface{}
+		maxHumidityList   []interface{}
+		minHumidityList   []interface{}
+		maxPressureList   []interface{}
+		minPressureList   []interface{}
+		maxCloudList      []interface{}
+		minCloudList      []interface{}
+		maxWindSpeedList  []interface{}
+		minWindSpeedList  []interface{}
+		windDirectionList []interface{}
+		rainList          []interface{}
+		snowList          []interface{}
+		rowsIDList        []interface{}
+		finalJsonMap      map[string]interface{}
+	)
+
+	// fetch location information from the database
+	var dbConn DatabaseConnector
+	_, err := dbConn.StartDBConnection(wmsUtils.DBConnString)
+	defer func(database *DatabaseConnector) {
+		_ = database.CloseConnection()
+	}(&dbConn)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("DB connection error! -> %v\n", err)
+		return "", err
+	}
+	query := fmt.Sprintf("SELECT location_name, latitude, longitude, country_code, state_code FROM locations WHERE id = %s", locationId)
+	_, locationRow, err := dbConn.ExecuteQuery(query)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("Error during DB select for fetching location info: %v\n", err)
+		return "", err
+	}
+
+	// fetch user constraints from the database
+	query = fmt.Sprintf("SELECT * FROM user_constraints WHERE TIMESTAMPDIFF(SECOND,  time_stamp, CURRENT_TIMESTAMP()) > trigger_period AND location_id = %s", locationId)
+	_, userConstraintsRows, errV := dbConn.ExecuteQuery(query)
+	if errV != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("Error during DB select for fetching user constraints info: %v\n", err)
+		return "", err
+	}
+
+	for _, userConstraintsRow := range userConstraintsRows {
+
+		var rulesMap map[string]interface{}
+		if err := json.Unmarshal([]byte(userConstraintsRow[3]), &rulesMap); err != nil {
+			return "", err
+		}
+
+		userIDList = append(userIDList, userConstraintsRow[1])
+		rowsIDList = append(rowsIDList, userConstraintsRow[0])
+		maxTempList = append(maxTempList, rulesMap["max_temp"])
+		minTempList = append(minTempList, rulesMap["min_temp"])
+		maxHumidityList = append(maxHumidityList, rulesMap["max_humidity"])
+		minHumidityList = append(minHumidityList, rulesMap["min_humidity"])
+		maxPressureList = append(maxPressureList, rulesMap["max_pressure"])
+		minPressureList = append(minPressureList, rulesMap["min_pressure"])
+		maxCloudList = append(maxCloudList, rulesMap["max_cloud"])
+		minCloudList = append(minCloudList, rulesMap["min_cloud"])
+		maxWindSpeedList = append(maxWindSpeedList, rulesMap["max_wind_speed"])
+		minWindSpeedList = append(minWindSpeedList, rulesMap["min_wind_speed"])
+		windDirectionList = append(windDirectionList, rulesMap["wind_direction"])
+		rainList = append(rainList, rulesMap["rain"])
+		snowList = append(snowList, rulesMap["snow"])
+	}
+
+	finalJsonMap["rows_id"] = rowsIDList
+	finalJsonMap["user_id"] = userIDList
+	finalJsonMap["location"] = locationRow
+
+	// if no user is interested in a particular rule,
+	// then insertion of relative list of null values is not made
+
+	appendIfNotNull := func(key string, value interface{}) {
+		found := false
+		for _, element := range value.([]interface{}) {
+			if element != "null" {
+				found = true
+				break
+			}
+		}
+		if found {
+			finalJsonMap[key] = value
+		}
+	}
+
+	appendIfNotNull("max_temp", maxTempList)
+	appendIfNotNull("min_temp", minTempList)
+	appendIfNotNull("max_humidity", maxHumidityList)
+	appendIfNotNull("min_humidity", minHumidityList)
+	appendIfNotNull("max_pressure", maxPressureList)
+	appendIfNotNull("min_pressure", minPressureList)
+	appendIfNotNull("max_cloud", maxCloudList)
+	appendIfNotNull("min_cloud", minCloudList)
+	appendIfNotNull("max_wind_speed", maxWindSpeedList)
+	appendIfNotNull("min_wind_speed", minWindSpeedList)
+	appendIfNotNull("wind_direction", windDirectionList)
+	appendIfNotNull("rain", rainList)
+	appendIfNotNull("snow", snowList)
+
+	finalJsonBytes, err := json.Marshal(finalJsonMap)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("Error during marshaling location info into []byte: %v\n", err)
+		return "", err
+	}
+
+	log.Println("FINAL JSON DICT", string(finalJsonBytes))
+	return string(finalJsonBytes), nil
 }
