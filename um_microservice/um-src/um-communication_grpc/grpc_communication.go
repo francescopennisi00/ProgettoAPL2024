@@ -71,13 +71,15 @@ func (s *UmNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wms
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		log.SetPrefix("[ERROR] ")
-		log.Printf("Error in extracting JWT Token without verifying it with Claims: %v\n", err)
+		log.Printf("Error in extracting JWT Token without verifying it with Claims")
+		err = errors.New("error in extracting JWT Token without verifying it with Claims")
 		return nil, err
 	}
 	email, okBool := claims["email"].(string)
 	if !okBool {
 		log.SetPrefix("[ERROR] ")
-		log.Printf("Impossible to extract email from JWT Token without verifying it: %v\n", err)
+		log.Printf("Impossible to extract email from JWT Token without verifying it")
+		err = errors.New("impossible to extract email from JWT Token without verifying it")
 		return nil, err
 	}
 
@@ -138,7 +140,7 @@ func (s *UmNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Requ
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		return &notifierUm.Reply{Email: "null"}, nil
+		return &notifierUm.Reply{Email: "null"}, err
 	}
 
 	userId := in.UserId

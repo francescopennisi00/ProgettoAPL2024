@@ -52,13 +52,13 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 			// execute query and put rows into res
 			res, err := database.dbConn.Query(query)
 			if err != nil {
-				return nil, results, nil
+				return nil, results, err
 			}
 
 			// extract column names in order to know the number of columns
 			columns, errCol := res.Columns()
 			if errCol != nil {
-				return nil, results, err
+				return nil, results, errCol
 			}
 
 			// create a pointers array with the same length of columns number (required for Scan)
@@ -130,13 +130,13 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 			// execute query and put rows into res
 			res, err := database.dbConn.Query(query)
 			if err != nil {
-				return nil, results, nil
+				return nil, results, err
 			}
 
 			// extract column names in order to know the number of columns
 			columns, errCol := res.Columns()
 			if errCol != nil {
-				return nil, results, err
+				return nil, results, errCol
 			}
 
 			// create a pointers array with the same length of columns number (required for Scan)

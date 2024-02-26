@@ -59,7 +59,7 @@ func DeleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 		query := fmt.Sprintf("DELETE FROM users WHERE email='%s' and password='%s'", email, hashPsw)
 		_, _, errV := dbConn.ExecuteQuery(query)
 		if errV != nil {
-			umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database delete: %v", err))
+			umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database delete: %v", errV))
 			return
 		} else {
 			umUtils.SetResponseMessage(writer, http.StatusOK, "Account deleted with relative user constraints!")

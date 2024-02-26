@@ -45,9 +45,12 @@ func (si *SecretInitializer) initSecret(envVarName string) {
 		log.Fatalf("Error reading secret file for %s: %v", envVarName, err)
 	}
 	err = os.Setenv(envVarName, string(secretValue))
-	if err != nil {
+	if err == nil {
 		log.SetPrefix("[INFO] ")
 		log.Printf("Initialized %s\n", envVarName)
 		return
+	} else {
+		log.SetPrefix("[ERROR] ")
+		log.Fatalf("Error setting ENV variable %s: %v\n", envVarName, err)
 	}
 }
