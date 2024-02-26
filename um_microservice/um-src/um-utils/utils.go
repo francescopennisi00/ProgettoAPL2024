@@ -8,8 +8,8 @@ import (
 )
 
 type Credentials struct {
-	Email    string
-	Password string
+	Email    string `json:"email"`
+	Password string `json:"psw"`
 }
 
 func CalculateHash(inputString string) string {
