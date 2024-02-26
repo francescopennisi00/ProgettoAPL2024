@@ -134,7 +134,7 @@ func deliveryCallback(ack *kafka.Message) error {
 			errConv := errors.New("ID in ROWS_ID_LIST is not an integer number")
 			return errConv
 		}
-		query := fmt.Sprintf("UPDATE user_constraints SET checked=FALSE WHERE id = %d", idInt)
+		query := fmt.Sprintf("UPDATE user_constraints SET time_stamp = CURRENT_TIMESTAMP() WHERE id = %d", idInt)
 		_, _, err := dbConn.ExecIntoTransaction(query)
 		if err != nil {
 			log.SetPrefix("[ERROR] ")

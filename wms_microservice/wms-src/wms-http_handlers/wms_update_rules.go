@@ -118,7 +118,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	_, _, er := dbConn.ExecuteQuery(query)
 	if er != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
-			query = fmt.Sprintf("INSERT INTO user_constraints (user_id, location_id, rules, time_stamp, trigger_period) VALUES(%d, %s, %s, CURRENT_TIMESTAMP, %s)", idUser, locationId, jsonRulesString, triggerPeriod)
+			query = fmt.Sprintf("INSERT INTO user_constraints (user_id, location_id, rules, time_stamp, trigger_period) VALUES(%d, %s, '%s', CURRENT_TIMESTAMP, %s)", idUser, locationId, jsonRulesString, triggerPeriod)
 			_, _, err = dbConn.ExecuteQuery(query)
 			if err != nil {
 				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database insert: %v", err))
@@ -136,7 +136,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in starting DB transaction: %v", err))
 			return
 		}
-		query := fmt.Sprintf("UPDATE user_constraints SET rules = '%s' WHERE user_id = %d and location_id = %s", jsonRulesString, idUser, locationId)
+		query := fmt.Sprintf("UPDATE user_constraints SET rules = '%s' WHERE user_id = %d AND location_id = %s", jsonRulesString, idUser, locationId)
 		_, _, errQuery := dbConn.ExecIntoTransaction(query)
 		if errQuery != nil {
 			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in executing query into DB transaction: %v", errQuery))
