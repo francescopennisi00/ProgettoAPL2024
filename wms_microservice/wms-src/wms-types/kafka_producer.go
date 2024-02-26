@@ -210,11 +210,11 @@ func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
 		return "", err
 	}
 	query := fmt.Sprintf("SELECT location_name, latitude, longitude, country_code, state_code FROM locations WHERE id = %s", locationId)
-	_, locationRow, err := dbConn.ExecuteQuery(query)
-	if err != nil {
+	_, locationRow, errQ := dbConn.ExecuteQuery(query)
+	if errQ != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Printf("Error during DB select for fetching location info: %v\n", err)
-		return "", err
+		log.Printf("Error during DB select for fetching location info: %v\n", errQ)
+		return "", errQ
 	}
 
 	// fetch user constraints from the database
@@ -222,8 +222,8 @@ func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
 	_, userConstraintsRows, errV := dbConn.ExecuteQuery(query)
 	if errV != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Printf("Error during DB select for fetching user constraints info: %v\n", err)
-		return "", err
+		log.Printf("Error during DB select for fetching user constraints info: %v\n", errV)
+		return "", errV
 	}
 
 	for _, userConstraintsRow := range userConstraintsRows {
@@ -293,7 +293,7 @@ func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
 	finalJsonBytes, errMar := json.Marshal(finalJsonMap)
 	if errMar != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Printf("Error during marshaling location info into []byte: %v\n", err)
+		log.Printf("Error during marshaling location info into []byte: %v\n", errMar)
 		return "", errMar
 	}
 

@@ -79,11 +79,11 @@ func findPendingWork(kProducer *wmsTypes.KafkaProducer) ([]string, error) {
 		return nil, err
 	}
 	query := "SELECT location_id FROM user_constraints WHERE TIMESTAMPDIFF(SECOND,  time_stamp, CURRENT_TIMESTAMP()) > trigger_period GROUP BY location_id"
-	_, rows, err := dbConn.ExecuteQuery(query)
+	_, rows, errQ := dbConn.ExecuteQuery(query)
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
-		log.Printf("DB query execution error in retreive location ids! -> %v\n", err)
-		return nil, err
+		log.Printf("DB query execution error in retreive location ids! -> %v\n", errQ)
+		return nil, errQ
 	}
 	var kafkaMessageList []string
 	for _, row := range rows {
