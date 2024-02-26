@@ -66,7 +66,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	locationLongitude := rules.LocationInfo[2]
 	longitudeFloat, errParse := strconv.ParseFloat(locationLatitude, 64)
 	if errParse != nil {
-		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during latitude conversion from string to float64: %v", errParse))
+		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during longitude conversion from string to float64: %v", errParse))
 	}
 	roundedLongitude := wmsUtils.Round(longitudeFloat, 3)
 	countryCode := rules.LocationInfo[3]
@@ -101,7 +101,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			log.SetPrefix("[INFO] ")
 			log.Println("New location correctly inserted!")
 		} else {
-			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", errorVar))
+			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select: %v", errorVar))
 			return
 		}
 	} else {
@@ -126,7 +126,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			wmsUtils.SetResponseMessage(writer, http.StatusOK, "New user_constraints correctly inserted!")
 			return
 		} else {
-			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", er))
+			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select: %v", er))
 			return
 		}
 	} else {
