@@ -1,8 +1,6 @@
 package wms_utils
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"math"
 	"net/http"
@@ -29,13 +27,6 @@ type Rules struct {
 	Snow          string
 	MaxCloud      string
 	MinCloud      string
-}
-
-func CalculateHash(inputString string) string {
-	sha256Hash := sha256.New()
-	sha256Hash.Write([]byte(inputString))
-	hashResult := sha256Hash.Sum(nil)
-	return hex.EncodeToString(hashResult)
 }
 
 func SetResponseMessage(w http.ResponseWriter, code int, message string) {
