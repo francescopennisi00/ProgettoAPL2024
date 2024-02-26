@@ -52,6 +52,8 @@ func RegisterHandler(writer http.ResponseWriter, request *http.Request) {
 				umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database insert: %v", err))
 				return
 			}
+			umUtils.SetResponseMessage(writer, http.StatusOK, "Registration made successfully! Now try to sign in!")
+			return
 		} else {
 			umUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", errorVar))
 			return
@@ -60,6 +62,4 @@ func RegisterHandler(writer http.ResponseWriter, request *http.Request) {
 		umUtils.SetResponseMessage(writer, http.StatusBadRequest, "Email already in use! Try to sign in!")
 		return
 	}
-
-	umUtils.SetResponseMessage(writer, http.StatusOK, "Registration made successfully! Now try to sign in!")
 }
