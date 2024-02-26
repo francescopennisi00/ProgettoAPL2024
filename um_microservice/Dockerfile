@@ -6,7 +6,7 @@ COPY . .
 
 RUN go mod download
 
-WORKDIR /app/src
+WORKDIR /app/um-src
 
 RUN go build -o um_main
 

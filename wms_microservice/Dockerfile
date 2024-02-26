@@ -6,7 +6,7 @@ COPY . .
 
 RUN go mod download
 
-WORKDIR /app/src
+WORKDIR /app/wms-src
 
 RUN go build -o wms_main
 
