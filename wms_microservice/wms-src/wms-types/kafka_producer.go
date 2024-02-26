@@ -3,7 +3,6 @@ package wms_types
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"log"
@@ -87,18 +86,18 @@ func deliveryCallback(ack *kafka.Message) error {
 		return ack.TopicPartition.Error
 	}
 
-	// ack contains message, that is a JSON formatted string received as []byte: we convert it into a Go map
-	var messageDict map[string]interface{}
-	if err := json.Unmarshal(ack.Value, &messageDict); err != nil {
+	// ack contains message, that is a JSON formatted string received as []byte: we convert it into a KafkaMessage type
+	var message wmsUtils.KafkaMessage
+	if err := json.Unmarshal(ack.Value, &message); err != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Error decoding message: %v\n", err)
 		return err
 	}
 	log.SetPrefix("[INFO] ")
 	log.Printf("Ack received for message: ")
-	log.Println(messageDict)
+	log.Println(message)
 
-	rowsIDList := messageDict["rows_id"].([]interface{})
+	rowsIDList := message.RowsIdList
 
 	// open DB connection in order to update timestamp of the last check for the rules of the ack message
 	var dbConn DatabaseConnector
@@ -120,21 +119,9 @@ func deliveryCallback(ack *kafka.Message) error {
 		log.Printf("Error in start DB transaction: %v\n", errTr)
 		return errTr
 	}
-
 	for _, id := range rowsIDList {
-		// convert id to int
-		idInt, ok := id.(int)
-		if ok {
-			log.SetPrefix("[INFO] ")
-			log.Println("ID in ROWS_ID_LIST: ", id)
-		} else {
-			log.SetPrefix("[ERROR] ")
-			log.Println("ID in ROWS_ID_LIST is not an integer number")
-			_ = dbConn.RollbackTransaction()
-			errConv := errors.New("ID in ROWS_ID_LIST is not an integer number")
-			return errConv
-		}
-		query := fmt.Sprintf("UPDATE user_constraints SET time_stamp = CURRENT_TIMESTAMP() WHERE id = %d", idInt)
+		// id is an integer but its type is string
+		query := fmt.Sprintf("UPDATE user_constraints SET time_stamp = CURRENT_TIMESTAMP() WHERE id = %s", id)
 		_, _, err := dbConn.ExecIntoTransaction(query)
 		if err != nil {
 			log.SetPrefix("[ERROR] ")
@@ -179,24 +166,6 @@ func (kp *KafkaProducer) ProduceKafkaMessage(topicName string, message string) e
 }
 
 func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
-	var (
-		userIDList        []interface{}
-		maxTempList       []interface{}
-		minTempList       []interface{}
-		maxHumidityList   []interface{}
-		minHumidityList   []interface{}
-		maxPressureList   []interface{}
-		minPressureList   []interface{}
-		maxCloudList      []interface{}
-		minCloudList      []interface{}
-		maxWindSpeedList  []interface{}
-		minWindSpeedList  []interface{}
-		windDirectionList []interface{}
-		rainList          []interface{}
-		snowList          []interface{}
-		rowsIDList        []interface{}
-		finalJsonMap      map[string]interface{}
-	)
 
 	// fetch location information from the database
 	var dbConn DatabaseConnector
@@ -209,8 +178,9 @@ func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
 		log.Printf("DB connection error! -> %v\n", err)
 		return "", err
 	}
+	// extracting from DB the list of information about current location of the Kafka message
 	query := fmt.Sprintf("SELECT location_name, latitude, longitude, country_code, state_code FROM locations WHERE id = %s", locationId)
-	_, locationRow, errQ := dbConn.ExecuteQuery(query)
+	_, locationRows, errQ := dbConn.ExecuteQuery(query)
 	if errQ != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Error during DB select for fetching location info: %v\n", errQ)
@@ -226,77 +196,43 @@ func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
 		return "", errV
 	}
 
+	var kMessage wmsUtils.KafkaMessage
 	for _, userConstraintsRow := range userConstraintsRows {
 
-		var rulesMap map[string]interface{}
-		if err := json.Unmarshal([]byte(userConstraintsRow[3]), &rulesMap); err != nil {
+		var rulesJson wmsUtils.Rules
+		if err := json.Unmarshal([]byte(userConstraintsRow[3]), &rulesJson); err != nil {
+			log.SetPrefix("[ERROR] ")
+			log.Printf("Error during unmarshaling of rules JSON from DB into KafkaMessage type: %v\n", err)
 			return "", err
 		}
 
-		userIDList = append(userIDList, userConstraintsRow[1])
-		rowsIDList = append(rowsIDList, userConstraintsRow[0])
-		maxTempList = append(maxTempList, rulesMap["max_temp"])
-		minTempList = append(minTempList, rulesMap["min_temp"])
-		maxHumidityList = append(maxHumidityList, rulesMap["max_humidity"])
-		minHumidityList = append(minHumidityList, rulesMap["min_humidity"])
-		maxPressureList = append(maxPressureList, rulesMap["max_pressure"])
-		minPressureList = append(minPressureList, rulesMap["min_pressure"])
-		maxCloudList = append(maxCloudList, rulesMap["max_cloud"])
-		minCloudList = append(minCloudList, rulesMap["min_cloud"])
-		maxWindSpeedList = append(maxWindSpeedList, rulesMap["max_wind_speed"])
-		minWindSpeedList = append(minWindSpeedList, rulesMap["min_wind_speed"])
-		windDirectionList = append(windDirectionList, rulesMap["wind_direction"])
-		rainList = append(rainList, rulesMap["rain"])
-		snowList = append(snowList, rulesMap["snow"])
+		kMessage.UserIdList = append(kMessage.UserIdList, userConstraintsRow[1])
+		kMessage.RowsIdList = append(kMessage.RowsIdList, userConstraintsRow[0])
+		kMessage.MaxTempList = append(kMessage.MaxTempList, rulesJson.MaxTemp)
+		kMessage.MinTempList = append(kMessage.MinTempList, rulesJson.MinTemp)
+		kMessage.MaxHumidityList = append(kMessage.MaxHumidityList, rulesJson.MaxHumidity)
+		kMessage.MinHumidityList = append(kMessage.MinHumidityList, rulesJson.MinHumidity)
+		kMessage.MaxPressureList = append(kMessage.MaxPressureList, rulesJson.MaxPressure)
+		kMessage.MinPressureList = append(kMessage.MinPressureList, rulesJson.MinPressure)
+		kMessage.MaxCloudList = append(kMessage.MaxCloudList, rulesJson.MaxCloud)
+		kMessage.MinCloudList = append(kMessage.MinCloudList, rulesJson.MinCloud)
+		kMessage.MaxWindSpeedList = append(kMessage.MaxWindSpeedList, rulesJson.MaxWindSpeed)
+		kMessage.MinWindSpeedList = append(kMessage.MinWindSpeedList, rulesJson.MinWindSpeed)
+		kMessage.WindDirectionList = append(kMessage.WindDirectionList, rulesJson.WindDirection)
+		kMessage.RainList = append(kMessage.RainList, rulesJson.Rain)
+		kMessage.SnowList = append(kMessage.SnowList, rulesJson.Snow)
 	}
 
-	finalJsonMap["rows_id"] = rowsIDList
-	finalJsonMap["user_id"] = userIDList
-	finalJsonMap["location"] = locationRow
+	kMessage.Location = locationRows[0] //the Kafka Message has only one location
 
-	// if no user is interested in a particular rule,
-	// then insertion of relative list of null values is not made
-
-	appendIfNotNull := func(key string, value interface{}) {
-		found := false
-		for _, element := range value.([]interface{}) {
-			if element != "null" {
-				found = true
-				break
-			}
-		}
-		if found {
-			finalJsonMap[key] = value
-		}
-	}
-
-	ruleToListTargetValue := map[string]interface{}{
-		"max_temp":       maxTempList,
-		"min_temp":       minTempList,
-		"max_humidity":   maxHumidityList,
-		"min_humidity":   minHumidityList,
-		"max_pressure":   maxPressureList,
-		"min_pressure":   minPressureList,
-		"max_cloud":      maxCloudList,
-		"min_cloud":      minCloudList,
-		"max_wind_speed": maxWindSpeedList,
-		"min_wind_speed": minWindSpeedList,
-		"wind_direction": windDirectionList,
-		"rain":           rainList,
-		"snow":           snowList,
-	}
-
-	for key, value := range ruleToListTargetValue {
-		appendIfNotNull(key, value)
-	}
-
-	finalJsonBytes, errMar := json.Marshal(finalJsonMap)
+	finalJsonBytes, errMar := json.Marshal(kMessage)
 	if errMar != nil {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Error during marshaling location info into []byte: %v\n", errMar)
 		return "", errMar
 	}
 
-	log.Println("FINAL JSON DICT", string(finalJsonBytes))
+	log.Println("FINAL JSON DICT: ", string(finalJsonBytes))
 	return string(finalJsonBytes), nil
+
 }

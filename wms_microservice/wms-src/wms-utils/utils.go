@@ -12,21 +12,40 @@ type Credentials struct {
 }
 
 type Rules struct {
-	TriggerPeriod string
-	LocationInfo  []string
-	MaxTemp       string
-	MinTemp       string
-	MaxHumidity   string
-	MinHumidity   string
-	MaxPressure   string
-	MinPressure   string
-	MaxWindSpeed  string
-	MInWindSpeed  string
-	WindDirection string
-	Rain          string
-	Snow          string
-	MaxCloud      string
-	MinCloud      string
+	TriggerPeriod string   `json:"trigger_period"`
+	LocationInfo  []string `json:"location"`
+	MaxTemp       string   `json:"max_temp"`
+	MinTemp       string   `json:"min_temp"`
+	MaxHumidity   string   `json:"max_humidity"`
+	MinHumidity   string   `json:"min_humidity"`
+	MaxPressure   string   `json:"max_pressure"`
+	MinPressure   string   `json:"min_pressure"`
+	MaxWindSpeed  string   `json:"max_wind_speed"`
+	MinWindSpeed  string   `json:"min_wind_speed"`
+	WindDirection string   `json:"wind_direction"`
+	Rain          string   `json:"rain"`
+	Snow          string   `json:"snow"`
+	MaxCloud      string   `json:"max_cloud"`
+	MinCloud      string   `json:"min_cloud"`
+}
+
+type KafkaMessage struct {
+	UserIdList        []string `json:"user_id"`
+	Location          []string `json:"location"`
+	MaxTempList       []string `json:"max_temp"`
+	MinTempList       []string `json:"min_temp"`
+	MaxHumidityList   []string `json:"max_humidity"`
+	MinHumidityList   []string `json:"min_humidity"`
+	MaxPressureList   []string `json:"max_pressure"`
+	MinPressureList   []string `json:"min_pressure"`
+	MaxWindSpeedList  []string `json:"max_wind_speed"`
+	MinWindSpeedList  []string `json:"min_wind_speed"`
+	WindDirectionList []string `json:"wind_direction"`
+	RainList          []string `json:"rain"`
+	SnowList          []string `json:"snow"`
+	MaxCloudList      []string `json:"max_cloud"`
+	MinCloudList      []string `json:"min_cloud"`
+	RowsIdList        []string `json:"rows_id"`
 }
 
 func SetResponseMessage(w http.ResponseWriter, code int, message string) {
