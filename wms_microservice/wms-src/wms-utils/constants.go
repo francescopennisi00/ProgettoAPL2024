@@ -15,7 +15,7 @@ var (
 const (
 	UmIpPort                    string = "um-service:50052"
 	PortUM                      int    = 50052
-	PortAPIGateway              string = "50053"
+	PortAPIGateway              string = "50051"
 	DBDriver                    string = "mysql"
 	TriggerPeriodTimer                 = 60 * time.Second
 	TimeoutTopicMetadata        int    = 5000 // timeout in milliseconds
