@@ -140,7 +140,7 @@ func (s *UmNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Requ
 		_ = database.CloseConnection()
 	}(&dbConn)
 	if err != nil {
-		return &notifierUm.Reply{Email: "null"}, err
+		return &notifierUm.Reply{Email: "null"}, nil
 	}
 
 	userId := in.UserId
@@ -154,7 +154,7 @@ func (s *UmNotifierServer) RequestEmail(ctx context.Context, in *notifierUm.Requ
 		} else {
 			log.SetPrefix("[ERROR] ")
 			log.Printf("DB Error: %v\n", errorVar)
-			return &notifierUm.Reply{Email: "null"}, errorVar
+			return &notifierUm.Reply{Email: "null"}, nil
 		}
 	} else {
 		emailString := emailRows[0][0]

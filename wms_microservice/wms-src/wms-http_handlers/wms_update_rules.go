@@ -60,13 +60,13 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	locationName := rules.LocationInfo[0]
 	locationLatitude := rules.LocationInfo[1]
 	latitudeFloat, errConv := strconv.ParseFloat(locationLatitude, 64)
-	if err != nil {
+	if errConv != nil {
 		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during latitude conversion from string to float64: %v", errConv))
 	}
 	roundedLatitude := wmsUtils.Round(latitudeFloat, 3)
 	locationLongitude := rules.LocationInfo[2]
 	longitudeFloat, errParse := strconv.ParseFloat(locationLatitude, 64)
-	if err != nil {
+	if errParse != nil {
 		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during latitude conversion from string to float64: %v", errParse))
 	}
 	roundedLongitude := wmsUtils.Round(longitudeFloat, 3)
@@ -127,7 +127,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			wmsUtils.SetResponseMessage(writer, http.StatusOK, "New user_constraints correctly inserted!")
 			return
 		} else {
-			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", errorVar))
+			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", er))
 			return
 		}
 	} else {

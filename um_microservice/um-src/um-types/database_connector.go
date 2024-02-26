@@ -211,7 +211,6 @@ func (database *DatabaseConnector) CommitTransaction() error {
 			log.Printf("DB transaction commit error: %v\n", err)
 			return err
 		} else {
-			database.transaction = nil
 			database.CloseTransaction()
 			return nil
 		}
