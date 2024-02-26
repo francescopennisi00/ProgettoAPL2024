@@ -107,7 +107,24 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		locationId = rowsLocation[0][0]
 	}
-	jsonRulesBytes, errMar := json.Marshal(rules)
+
+	// insert rule's values into a RulesIntoDB type variable
+	var rulesIntoDB wmsUtils.RulesIntoDB
+	rulesIntoDB.MaxTemp = rules.MaxTemp
+	rulesIntoDB.MinTemp = rules.MinTemp
+	rulesIntoDB.MaxHumidity = rules.MaxHumidity
+	rulesIntoDB.MinHumidity = rules.MinHumidity
+	rulesIntoDB.MaxPressure = rules.MaxPressure
+	rulesIntoDB.MinPressure = rules.MinPressure
+	rulesIntoDB.MaxWindSpeed = rules.MaxWindSpeed
+	rulesIntoDB.MaxWindSpeed = rules.MaxWindSpeed
+	rulesIntoDB.WindDirection = rules.WindDirection
+	rulesIntoDB.Rain = rules.Rain
+	rulesIntoDB.Snow = rules.Snow
+	rulesIntoDB.MaxCloud = rules.MaxCloud
+	rulesIntoDB.MinCloud = rules.MinCloud
+
+	jsonRulesBytes, errMar := json.Marshal(rulesIntoDB)
 	if errMar != nil {
 		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error into convert rules json into string: %v", errMar))
 		return

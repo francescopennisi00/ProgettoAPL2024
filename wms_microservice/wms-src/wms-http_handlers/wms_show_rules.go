@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	grpcC "wms_microservice/wms-src/wms-communication_grpc"
@@ -12,9 +13,72 @@ import (
 	wmsUtils "wms_microservice/wms-src/wms-utils"
 )
 
-// TODO: implement this one
-func formatRulesResponse(rules interface{}) string {
-	return ""
+// this function produce an output string that contains only information about rules that user is interested in
+func reduceRuleMap(rule wmsUtils.RulesIntoDB) (string, error) {
+
+	// Convert the rule struct in a byte slice in order to Unmarshal it into a map
+	ruleBytes, err := json.Marshal(rule)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Println("Error during JSON marshaling:", err)
+		return "", err
+	}
+
+	var ruleMap map[string]string
+	err = json.Unmarshal(ruleBytes, &ruleMap)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Println("Error during JSON unmarshal:", err)
+		return "", err
+	}
+
+	for key, value := range ruleMap {
+		if value == "null" {
+			delete(ruleMap, key)
+		}
+	}
+
+	//execute marshaling of the ruleMap without "null" values into a JSON string
+	ruleMapBytes, errMar := json.Marshal(ruleMap)
+	if errMar != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Println("Error during JSON marshal of final string:", err)
+		return "", err
+	}
+
+	return string(ruleMapBytes), nil
+
+}
+
+// TODO: maybe we have to change it in order to return a JSON
+func formatRulesResponse(rules []wmsUtils.ShowRulesOutput) string {
+	stringToBeReturned := "No rules inserted!"
+	locationRulesString := ""
+	counter := 1
+	// rule[0] = {"location":location_info_list}
+	// rule[1] = {rule:("null" or value), ..., "location":location_info_list}
+	// rule[2] = {"trigger_period": trigger_period_value}
+	for _, rule := range rules {
+		ruleLocationMapString, err := json.Marshal(rule.Location)
+		if err != nil {
+			return fmt.Sprintf("Error in marshaling rule.Location: %v\n", err)
+		}
+		triggerPeriodMapString, errM := json.Marshal(rule.TriggerPeriod)
+		if errM != nil {
+			return fmt.Sprintf("Error in marshaling rule.TriggerPeriod: %v\n", errM)
+		}
+		ruleMapString, errReduce := reduceRuleMap(rule.Rules)
+		if errReduce != nil {
+			return fmt.Sprintf("Error in reduceRuleMap: %v\n", errReduce)
+		}
+		tempString := fmt.Sprintf("LOCATION {%d}<br>%s<br>%s<br>%s<br><br>", counter, ruleLocationMapString, ruleMapString, triggerPeriodMapString)
+		locationRulesString = locationRulesString + tempString
+		counter++
+	}
+	if locationRulesString != "" {
+		stringToBeReturned = locationRulesString
+	}
+	return stringToBeReturned
 }
 
 func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
@@ -70,8 +134,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		}
 	} else {
 
-		// TODO: forse va rivisto! Per ora così!
-		var rulesList []interface{} // List of (location_info, rules, trigger_period key-value pairs)
+		var rulesList []wmsUtils.ShowRulesOutput // List of (location_info, rules, trigger_period key-value pairs)
 
 		for _, rowLocation := range rowsLocation {
 			locationId := rowLocation[0]
@@ -85,26 +148,21 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 				return
 			}
 
-			//TODO: forse anche questi dati vanno rivisti! Per ora così!
-			var tempList []interface{}
-			var locationMap map[string][]string
-			locationMap["location"] = rowLocation
-			tempList = append(tempList, locationMap)
-			var rules wmsUtils.Rules
+			var rulesListItem wmsUtils.ShowRulesOutput
+			rulesListItem.Location = rowLocation
+			var rules wmsUtils.RulesIntoDB
 			err := json.Unmarshal([]byte(rulesJsonString), &rules)
 			if err != nil {
 				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in unmarshal JSON rules into Rules struct: %v", err))
 				return
 			}
-			tempList = append(tempList, rules)
-			var triggerPeriodMap map[string]string
-			triggerPeriodMap["trigger_period"] = triggerPeriod
-			tempList = append(tempList, triggerPeriodMap)
-			rulesList = append(rulesList, tempList)
+			rulesListItem.Rules = rules
+			rulesListItem.TriggerPeriod = triggerPeriod
+			rulesList = append(rulesList, rulesListItem)
 		}
-		rulesReturned := formatRulesResponse(rulesList)
+		stringToReturn := formatRulesResponse(rulesList)
 		//TODO: for now we return a string: maybe we can return a JSON
-		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("YOUR RULES: <br><br> %s", rulesReturned))
+		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("YOUR RULES: <br><br> %s", stringToReturn))
 		return
 	}
 }
