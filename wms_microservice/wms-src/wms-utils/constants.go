@@ -1,15 +1,13 @@
 package wms_utils
 
 import (
-	"fmt"
-	"os"
 	"strconv"
 	"time"
 )
 
 var (
-	DBConnString                      = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
-	KafkaAcksProducerParameter string = strconv.Itoa(int('1'))
+	DBConnString               string
+	KafkaAcksProducerParameter = strconv.Itoa(int('1'))
 )
 
 const (

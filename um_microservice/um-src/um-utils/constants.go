@@ -1,12 +1,7 @@
 package um_utils
 
-import (
-	"fmt"
-	"os"
-)
-
 var (
-	DBConnString = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
+	DBConnString string
 )
 
 const (

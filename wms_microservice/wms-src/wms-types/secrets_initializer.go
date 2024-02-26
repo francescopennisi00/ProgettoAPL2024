@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	wmsUtils "wms_microservice/wms-src/wms-utils"
 )
 
 var lock = &sync.Mutex{}
@@ -35,6 +36,7 @@ func NewSecretInitializer() *SecretInitializer {
 
 func (si *SecretInitializer) InitSecrets() {
 	si.initSecret("PASSWORD")
+	wmsUtils.DBConnString = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("HOSTNAME"), os.Getenv("PORT"), os.Getenv("DATABASE"))
 }
 
 func (si *SecretInitializer) initSecret(envVarName string) {
