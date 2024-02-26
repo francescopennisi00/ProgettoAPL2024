@@ -45,6 +45,38 @@ func serveUm() {
 	}
 }
 
+func findPendingWork(kProducer *wmsTypes.KafkaProducer) ([]string, error) {
+	var dbConn wmsTypes.DatabaseConnector
+	_, err := dbConn.StartDBConnection(wmsUtils.DBConnString)
+	defer func(database *wmsTypes.DatabaseConnector) {
+		_ = database.CloseConnection()
+	}(&dbConn)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("DB connection error! -> %v\n", err)
+		return nil, err
+	}
+	query := "SELECT location_id FROM user_constraints WHERE TIMESTAMPDIFF(SECOND,  time_stamp, CURRENT_TIMESTAMP()) > trigger_period GROUP BY location_id"
+	_, rows, err := dbConn.ExecuteQuery(query)
+	if err != nil {
+		log.SetPrefix("[ERROR] ")
+		log.Printf("DB query execution error in retreive location ids! -> %v\n", err)
+		return nil, err
+	}
+	var kafkaMessageList []string
+	for _, row := range rows {
+		locationId := row[0]
+		kafkaMessage, err := kProducer.MakeKafkaMessage(locationId)
+		if err != nil {
+			log.SetPrefix("[ERROR] ")
+			log.Printf("Error in MakeKafkaMessage -> %v\n", err)
+			return nil, err
+		}
+		kafkaMessageList = append(kafkaMessageList, kafkaMessage)
+	}
+	return kafkaMessageList, nil
+}
+
 func main() {
 
 	siInstance := wmsTypes.NewSecretInitializer()

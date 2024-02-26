@@ -178,7 +178,7 @@ func (kp *KafkaProducer) ProduceKafkaMessage(topicName string, message string) e
 	return deliveryCallback(ack)
 }
 
-func MakeKafkaMessage(locationId string) (string, error) {
+func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
 	var (
 		userIDList        []interface{}
 		maxTempList       []interface{}
