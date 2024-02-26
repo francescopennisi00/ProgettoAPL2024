@@ -24,7 +24,8 @@ func reduceRuleMap(rule wmsUtils.RulesIntoDB) (string, error) {
 		return "", err
 	}
 
-	var ruleMap map[string]string
+	type MapOfRulesUserIsInterestedIn map[string]string
+	var ruleMap MapOfRulesUserIsInterestedIn
 	err = json.Unmarshal(ruleBytes, &ruleMap)
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
@@ -55,9 +56,7 @@ func formatRulesResponse(rules []wmsUtils.ShowRulesOutput) string {
 	stringToBeReturned := "No rules inserted!"
 	locationRulesString := ""
 	counter := 1
-	// rule[0] = {"location":location_info_list}
-	// rule[1] = {rule:("null" or value), ..., "location":location_info_list}
-	// rule[2] = {"trigger_period": trigger_period_value}
+
 	for _, rule := range rules {
 		ruleLocationMapString, err := json.Marshal(rule.Location)
 		if err != nil {

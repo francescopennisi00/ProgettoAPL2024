@@ -64,7 +64,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	roundedLatitude := wmsUtils.Round(latitudeFloat, 3)
 	locationLongitude := rules.LocationInfo[2]
-	longitudeFloat, errParse := strconv.ParseFloat(locationLatitude, 64)
+	longitudeFloat, errParse := strconv.ParseFloat(locationLongitude, 64)
 	if errParse != nil {
 		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during longitude conversion from string to float64: %v", errParse))
 	}
