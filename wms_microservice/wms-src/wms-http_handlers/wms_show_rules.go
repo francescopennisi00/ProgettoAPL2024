@@ -89,9 +89,10 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 
 	// Communication with UserManager in order to authenticate the user and retrieve user id
 	var idUser int64
+	var err error
 	authorizationHeader := request.Header.Get("Authorization")
 	if authorizationHeader != "" && strings.HasPrefix(authorizationHeader, "Bearer ") {
-		idUser, err := grpcC.AuthenticateAndRetrieveUserId(authorizationHeader)
+		idUser, err = grpcC.AuthenticateAndRetrieveUserId(authorizationHeader)
 		if err != nil {
 			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in communication with authentication server: %v", err))
 			return
@@ -113,7 +114,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	var dbConn wmsTypes.DatabaseConnector
-	_, err := dbConn.StartDBConnection(wmsUtils.DBConnString)
+	_, err = dbConn.StartDBConnection(wmsUtils.DBConnString)
 	defer func(database *wmsTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
@@ -125,10 +126,10 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	_, rowsLocation, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
-			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, "There is no rules that you have indicated! Please insert location, rules and trigger period!")
+			wmsUtils.SetResponseMessage(writer, http.StatusOK, "There is no rules that you have indicated! Please insert location, rules and trigger period!")
 			return
 		} else {
-			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select: %v", errorVar))
+			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select from 'user_constraints' table: %v", errorVar))
 			return
 		}
 	} else {
@@ -143,7 +144,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			query = fmt.Sprintf("SELECT location_name, country_code, state_code FROM locations WHERE id = %s", locationId)
 			_, _, err = dbConn.ExecuteQuery(query)
 			if err != nil {
-				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select execution: %v", err))
+				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select execution from 'location' table: %v", err))
 				return
 			}
 
@@ -161,7 +162,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		}
 		stringToReturn := formatRulesResponse(rulesList)
 		//TODO: for now we return a string: maybe we can return a JSON
-		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("YOUR RULES: <br><br> %s", stringToReturn))
+		wmsUtils.SetResponseMessage(writer, http.StatusOK, fmt.Sprintf("YOUR RULES: <br><br> %s", stringToReturn))
 		return
 	}
 }
