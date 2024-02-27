@@ -101,7 +101,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			log.SetPrefix("[INFO] ")
 			log.Println("New location correctly inserted!")
 		} else {
-			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select: %v", errorVar))
+			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select from 'location' table: %v", errorVar))
 			return
 		}
 	} else {
@@ -140,10 +140,10 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database insert: %v", err))
 				return
 			}
-			wmsUtils.SetResponseMessage(writer, http.StatusOK, "New user_constraints correctly inserted!")
+			wmsUtils.SetResponseMessage(writer, http.StatusOK, "New user constraints correctly inserted!")
 			return
 		} else {
-			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select: %v", er))
+			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select from 'user_constraints' table: %v", er))
 			return
 		}
 	} else {
