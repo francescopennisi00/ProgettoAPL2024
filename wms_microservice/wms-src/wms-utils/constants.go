@@ -7,7 +7,7 @@ import (
 
 var (
 	DBConnString               string
-	KafkaAcksProducerParameter = strconv.Itoa(int('1'))
+	KafkaAcksProducerParameter = strconv.Itoa(1)
 )
 
 const (
