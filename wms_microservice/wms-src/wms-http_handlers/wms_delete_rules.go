@@ -27,7 +27,7 @@ func DeleteRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	var location wmsUtils.LocationType
-	err := json.NewDecoder(request.Body).Decode(&location.Location)
+	err := json.NewDecoder(request.Body).Decode(&location)
 	if err != nil {
 		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %v", err))
 		return
