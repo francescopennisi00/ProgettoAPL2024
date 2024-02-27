@@ -62,7 +62,7 @@ func serveAPIGateway() {
 	router := mux.NewRouter()
 	router.HandleFunc("/update_rules", httpC.UpdateRulesHandler).Methods("POST")
 	router.HandleFunc("/show_rules", httpC.ShowRulesHandler).Methods("GET")
-	router.HandleFunc("/update_rules/delete_user_constraints_by_location'", httpC.DeleteRulesHandler).Methods("POST")
+	router.HandleFunc("/update_rules/delete_user_constraints_by_location", httpC.DeleteRulesHandler).Methods("POST")
 	log.SetPrefix("[ERROR] ")
 	log.Fatalln(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }

@@ -51,7 +51,9 @@ type ShowRulesOutput struct {
 	TriggerPeriod string      `json:"trigger_period"`
 }
 
-type Location []string
+type LocationType struct {
+	Location []string `json:"location"`
+}
 
 type KafkaMessage struct {
 	UserIdList        []string `json:"user_id"`
