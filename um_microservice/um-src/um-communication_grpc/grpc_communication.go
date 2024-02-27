@@ -62,30 +62,26 @@ func (s *UmWmsServer) RequestUserIdViaJWTToken(ctx context.Context, in *wmsUm.Re
 	tokenString := in.GetJwtToken()
 
 	// extracting token information without verifying them: needed in order to retrieve user email
-	token, err := jwt.Parse(tokenString, nil)
-	if err != nil {
-		log.SetPrefix("[ERROR] ")
-		log.Printf("Error in parsing JWT Token without verifying it: %v\n", err)
-		return nil, err
-	}
+	token, _ := jwt.Parse(tokenString, nil)
+
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Error in extracting JWT Token without verifying it with Claims")
-		err = errors.New("error in extracting JWT Token without verifying it with Claims")
+		err := errors.New("error in extracting JWT Token without verifying it with Claims")
 		return nil, err
 	}
 	email, okBool := claims["email"].(string)
 	if !okBool {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Impossible to extract email from JWT Token without verifying it")
-		err = errors.New("impossible to extract email from JWT Token without verifying it")
+		err := errors.New("impossible to extract email from JWT Token without verifying it")
 		return nil, err
 	}
 
 	// Retrieve user's password from DB in oder to verifying JWT Token and authenticate him
 	var dbConn umTypes.DatabaseConnector
-	_, err = dbConn.StartDBConnection(umUtils.DBConnString)
+	_, err := dbConn.StartDBConnection(umUtils.DBConnString)
 	defer func(database *umTypes.DatabaseConnector) {
 		_ = database.CloseConnection()
 	}(&dbConn)
