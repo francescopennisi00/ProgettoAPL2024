@@ -117,7 +117,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	rulesIntoDB.MaxPressure = rules.MaxPressure
 	rulesIntoDB.MinPressure = rules.MinPressure
 	rulesIntoDB.MaxWindSpeed = rules.MaxWindSpeed
-	rulesIntoDB.MaxWindSpeed = rules.MaxWindSpeed
+	rulesIntoDB.MinWindSpeed = rules.MinWindSpeed
 	rulesIntoDB.WindDirection = rules.WindDirection
 	rulesIntoDB.Rain = rules.Rain
 	rulesIntoDB.Snow = rules.Snow
