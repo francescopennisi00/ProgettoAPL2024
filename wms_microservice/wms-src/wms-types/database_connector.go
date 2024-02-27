@@ -52,13 +52,18 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 			// execute query and put rows into res
 			res, err := database.dbConn.Query(query)
 			if err != nil {
-				return nil, results, err
+				return nil, nil, err
+			}
+
+			// check if rows are returned by query execution
+			if !res.Next() {
+				return nil, nil, sql.ErrNoRows
 			}
 
 			// extract column names in order to know the number of columns
 			columns, errCol := res.Columns()
 			if errCol != nil {
-				return nil, results, errCol
+				return nil, nil, errCol
 			}
 
 			// create a pointers array with the same length of columns number (required for Scan)
@@ -74,7 +79,7 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 			for res.Next() {
 				errorVar := res.Scan(pointers...) //scan of the whole row
 				if errorVar != nil {
-					return nil, results, errorVar
+					return nil, nil, errorVar
 				}
 				// extract values stored in pointers and add then to result
 				for _, pointer := range pointers {
@@ -89,21 +94,21 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 				results = append(results, result)
 				i++
 			}
-			return nil, results, nil
+			return nil, nil, nil
 
 		} else {
 			exec, err := database.dbConn.Exec(query)
 			if err != nil {
-				return nil, results, err
+				return nil, nil, err
 			}
-			return exec, results, nil
+			return exec, nil, nil
 		}
 	}
 
 	log.SetPrefix("[ERROR] ")
 	log.Println("DB connection already closed!")
 	er := sql.ErrConnDone
-	return nil, results, er
+	return nil, nil, er
 
 }
 
@@ -130,13 +135,18 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 			// execute query and put rows into res
 			res, err := database.dbConn.Query(query)
 			if err != nil {
-				return nil, results, err
+				return nil, nil, err
+			}
+
+			// check if rows are returned by query execution
+			if !res.Next() {
+				return nil, nil, sql.ErrNoRows
 			}
 
 			// extract column names in order to know the number of columns
 			columns, errCol := res.Columns()
 			if errCol != nil {
-				return nil, results, errCol
+				return nil, nil, errCol
 			}
 
 			// create a pointers array with the same length of columns number (required for Scan)
@@ -152,7 +162,7 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 			for res.Next() {
 				errorVar := res.Scan(pointers...) //scan of the whole row
 				if errorVar != nil {
-					return nil, results, errorVar
+					return nil, nil, errorVar
 				}
 				// extract values stored in pointers and add then to result
 				for _, pointer := range pointers {
@@ -171,9 +181,9 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 		} else {
 			exec, err := database.dbConn.Exec(query)
 			if err != nil {
-				return nil, results, err
+				return nil, nil, err
 			}
-			return exec, results, nil
+			return exec, nil, nil
 		}
 	}
 	log.SetPrefix("[ERROR] ")
