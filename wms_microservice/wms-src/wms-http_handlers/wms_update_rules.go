@@ -133,7 +133,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	query = fmt.Sprintf("SELECT * FROM user_constraints WHERE user_id = %d and location_id = %s", idUser, locationId)
 	_, _, er := dbConn.ExecuteQuery(query)
 	if er != nil {
-		if errors.Is(errorVar, sql.ErrNoRows) {
+		if errors.Is(er, sql.ErrNoRows) {
 			query = fmt.Sprintf("INSERT INTO user_constraints (user_id, location_id, rules, time_stamp, trigger_period) VALUES(%d, %s, '%s', CURRENT_TIMESTAMP, %s)", idUser, locationId, jsonRulesString, triggerPeriod)
 			_, _, err = dbConn.ExecuteQuery(query)
 			if err != nil {
