@@ -19,10 +19,12 @@ import utils.constants as constants
 # that contains information about the location in common for all the entries to be entered into the DB
 def check_rules(api_response, db_connect):
     def check_max(key, actual_value, target_value, temp_dict):
+        target_value = float(target_value)
         if actual_value > target_value:
             temp_dict[key] = actual_value
 
     def check_min(key, actual_value, target_value, temp_dict):
+        target_value = float(target_value)
         if actual_value < target_value:
             temp_dict[key] = actual_value
 
