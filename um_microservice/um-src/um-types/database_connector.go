@@ -55,11 +55,6 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 				return nil, nil, err
 			}
 
-			// check if rows are returned by query execution
-			if !res.Next() {
-				return nil, nil, sql.ErrNoRows
-			}
-
 			// extract column names in order to know the number of columns
 			columns, errCol := res.Columns()
 			if errCol != nil {
@@ -75,8 +70,10 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 			// row index (initially 0)
 			i := 0
 
+			noRows := true
 			// managing rows
 			for res.Next() {
+				noRows = false
 				errorVar := res.Scan(pointers...) //scan of the whole row
 				if errorVar != nil {
 					return nil, nil, errorVar
@@ -93,6 +90,9 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 				// append row to rows array ([][]string) to be returned
 				results = append(results, result)
 				i++
+			}
+			if noRows == true {
+				return nil, nil, sql.ErrNoRows
 			}
 			return nil, results, nil
 
@@ -138,11 +138,6 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 				return nil, nil, err
 			}
 
-			// check if rows are returned by query execution
-			if !res.Next() {
-				return nil, nil, sql.ErrNoRows
-			}
-
 			// extract column names in order to know the number of columns
 			columns, errCol := res.Columns()
 			if errCol != nil {
@@ -158,8 +153,10 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 			// row index (initially 0)
 			i := 0
 
+			noRows := true
 			// managing rows
 			for res.Next() {
+				noRows = false
 				errorVar := res.Scan(pointers...) //scan of the whole row
 				if errorVar != nil {
 					return nil, nil, errorVar
@@ -176,6 +173,9 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 				// append row to rows array ([][]string) to be returned
 				results = append(results, result)
 				i++
+			}
+			if noRows == true {
+				return nil, nil, sql.ErrNoRows
 			}
 			return nil, results, nil
 		} else {
