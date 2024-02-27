@@ -123,7 +123,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	query := fmt.Sprintf("SELECT location_id, rules, trigger_period FROM user_constraints WHERE user_id = %d", idUser)
-	_, rowsLocation, errorVar := dbConn.ExecuteQuery(query)
+	_, userConstraintsRows, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
 			wmsUtils.SetResponseMessage(writer, http.StatusOK, "There is no rules that you have indicated! Please insert location, rules and trigger period!")
@@ -136,22 +136,23 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 
 		var rulesList []wmsUtils.ShowRulesOutput // List of (location_info, rules, trigger_period key-value pairs)
 
-		for _, rowLocation := range rowsLocation {
-			locationId := rowLocation[0]
-			rulesJsonString := rowLocation[1]
-			triggerPeriod := rowLocation[2]
+		for _, userConstraintsRow := range userConstraintsRows {
+			locationId := userConstraintsRow[0]
+			rulesJsonString := userConstraintsRow[1]
+			triggerPeriod := userConstraintsRow[2]
+
 			// query to DB in order to retrieve information about location by location_id
-			query = fmt.Sprintf("SELECT location_name, country_code, state_code FROM locations WHERE id = %s", locationId)
-			_, _, err = dbConn.ExecuteQuery(query)
+			query = fmt.Sprintf("SELECT * FROM locations WHERE id = %s", locationId)
+			_, locationRows, err := dbConn.ExecuteQuery(query)
 			if err != nil {
 				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select execution from 'location' table: %v", err))
 				return
 			}
 
 			var rulesListItem wmsUtils.ShowRulesOutput
-			rulesListItem.Location = rowLocation
+			rulesListItem.Location = locationRows[0]
 			var rules wmsUtils.RulesIntoDB
-			err := json.Unmarshal([]byte(rulesJsonString), &rules)
+			err = json.Unmarshal([]byte(rulesJsonString), &rules)
 			if err != nil {
 				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in unmarshal JSON rules into Rules struct: %v", err))
 				return
