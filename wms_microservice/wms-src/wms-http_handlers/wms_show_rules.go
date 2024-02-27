@@ -142,7 +142,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			triggerPeriod := userConstraintsRow[2]
 
 			// query to DB in order to retrieve information about location by location_id
-			query = fmt.Sprintf("SELECT * FROM locations WHERE id = %s", locationId)
+			query = fmt.Sprintf("SELECT location_name, latitude, longitude, state_code FROM locations WHERE id = %s", locationId)
 			_, locationRows, err := dbConn.ExecuteQuery(query)
 			if err != nil {
 				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select execution from 'location' table: %v", err))
