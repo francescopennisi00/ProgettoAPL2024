@@ -45,10 +45,6 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 
 		if strings.HasPrefix(query, "SELECT ") {
 
-			// result is a []string variable for generic row, while named return parameter results is a
-			// [][]string and contains all the rows of the query result
-			var result []string
-
 			// execute query and put rows into res
 			res, err := database.dbConn.Query(query)
 			if err != nil {
@@ -61,12 +57,6 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 				return nil, nil, errCol
 			}
 
-			// create a pointers array with the same length of columns number (required for Scan)
-			pointers := make([]interface{}, len(columns))
-			for j := range pointers {
-				pointers[j] = new(string)
-			}
-
 			// row index (initially 0)
 			i := 0
 
@@ -74,6 +64,17 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 			// managing rows
 			for res.Next() {
 				noRows = false
+
+				// result is a []string variable for generic row, while named return parameter results is a
+				// [][]string and contains all the rows of the query result
+				var result []string
+
+				// create a pointers array with the same length of columns number (required for Scan)
+				pointers := make([]interface{}, len(columns))
+				for j := range pointers {
+					pointers[j] = new(string)
+				}
+
 				errorVar := res.Scan(pointers...) //scan of the whole row
 				if errorVar != nil {
 					return nil, nil, errorVar
@@ -128,10 +129,6 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 	if database.transaction != nil {
 		if strings.HasPrefix(query, "SELECT ") {
 
-			// result is a []string variable for generic row, while named return parameter results is a
-			// [][]string and contains all the rows of the query result
-			var result []string
-
 			// execute query and put rows into res
 			res, err := database.dbConn.Query(query)
 			if err != nil {
@@ -144,12 +141,6 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 				return nil, nil, errCol
 			}
 
-			// create a pointers array with the same length of columns number (required for Scan)
-			pointers := make([]interface{}, len(columns))
-			for j := range pointers {
-				pointers[j] = new(string)
-			}
-
 			// row index (initially 0)
 			i := 0
 
@@ -157,6 +148,17 @@ func (database *DatabaseConnector) ExecIntoTransaction(query string) (outcome sq
 			// managing rows
 			for res.Next() {
 				noRows = false
+
+				// result is a []string variable for generic row, while named return parameter results is a
+				// [][]string and contains all the rows of the query result
+				var result []string
+
+				// create a pointers array with the same length of columns number (required for Scan)
+				pointers := make([]interface{}, len(columns))
+				for j := range pointers {
+					pointers[j] = new(string)
+				}
+
 				errorVar := res.Scan(pointers...) //scan of the whole row
 				if errorVar != nil {
 					return nil, nil, errorVar

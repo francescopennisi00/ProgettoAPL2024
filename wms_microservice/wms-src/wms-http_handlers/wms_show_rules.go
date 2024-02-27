@@ -70,7 +70,7 @@ func formatRulesResponse(rules []wmsUtils.ShowRulesOutput) string {
 		if errReduce != nil {
 			return fmt.Sprintf("Error in reduceRuleMap: %v\n", errReduce)
 		}
-		tempString := fmt.Sprintf("LOCATION {%d}<br>%s<br>%s<br>%s<br><br>", counter, ruleLocationMapString, ruleMapString, triggerPeriodMapString)
+		tempString := fmt.Sprintf("LOCATION {%d}<br>%s<br>%s<br>trigger period: %s<br><br>", counter, ruleLocationMapString, ruleMapString, triggerPeriodMapString)
 		locationRulesString = locationRulesString + tempString
 		counter++
 	}
