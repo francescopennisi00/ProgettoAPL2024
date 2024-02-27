@@ -94,7 +94,7 @@ func (database *DatabaseConnector) ExecuteQuery(query string) (outcome sql.Resul
 				results = append(results, result)
 				i++
 			}
-			return nil, nil, nil
+			return nil, results, nil
 
 		} else {
 			exec, err := database.dbConn.Exec(query)
