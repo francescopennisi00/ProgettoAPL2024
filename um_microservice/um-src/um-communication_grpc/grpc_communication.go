@@ -56,7 +56,7 @@ func DeleteUserConstraintsByUserId(userId string) error {
 	return nil //no error occurred
 }
 
-func (s *UmNotifierServer) RequestUserIdViaJWTToken(ctx context.Context, in *wmsUm.Request) (*wmsUm.Reply, error) {
+func (s *UmWmsServer) RequestUserIdViaJWTToken(ctx context.Context, in *wmsUm.Request) (*wmsUm.Reply, error) {
 
 	// extracting JWT token from the request
 	tokenString := in.GetJwtToken()
