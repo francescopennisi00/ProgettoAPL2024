@@ -68,15 +68,13 @@ func (s *UmWmsServer) RequestUserIdViaJWTToken(ctx context.Context, in *wmsUm.Re
 	if !ok {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Error in extracting JWT Token without verifying it with Claims")
-		err := errors.New("error in extracting JWT Token without verifying it with Claims")
-		return nil, err
+		return &wmsUm.Reply{UserId: -3}, nil //token is not valid
 	}
 	email, okBool := claims["email"].(string)
 	if !okBool {
 		log.SetPrefix("[ERROR] ")
 		log.Printf("Impossible to extract email from JWT Token without verifying it")
-		err := errors.New("impossible to extract email from JWT Token without verifying it")
-		return nil, err
+		return &wmsUm.Reply{UserId: -3}, nil //token is not valid
 	}
 
 	// Retrieve user's password from DB in oder to verifying JWT Token and authenticate him
