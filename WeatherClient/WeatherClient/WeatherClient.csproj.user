@@ -12,6 +12,9 @@
     <MauiXaml Update="Views\AllRulesPage.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
+    <MauiXaml Update="Views\LoginPage.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
     <MauiXaml Update="Views\RulesPage.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
