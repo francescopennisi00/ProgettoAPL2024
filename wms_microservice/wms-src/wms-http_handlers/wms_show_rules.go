@@ -5,80 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	grpcC "wms_microservice/wms-src/wms-communication_grpc"
 	wmsTypes "wms_microservice/wms-src/wms-types"
 	wmsUtils "wms_microservice/wms-src/wms-utils"
 )
-
-// this function produce an output string that contains only information about rules that user is interested in
-func reduceRuleMap(rule wmsUtils.RulesIntoDB) (string, error) {
-
-	// Convert the rule struct in a byte slice in order to Unmarshal it into a map
-	ruleBytes, err := json.Marshal(rule)
-	if err != nil {
-		log.SetPrefix("[ERROR] ")
-		log.Println("Error during JSON marshaling:", err)
-		return "", err
-	}
-
-	type MapOfRulesUserIsInterestedIn map[string]string
-	var ruleMap MapOfRulesUserIsInterestedIn
-	err = json.Unmarshal(ruleBytes, &ruleMap)
-	if err != nil {
-		log.SetPrefix("[ERROR] ")
-		log.Println("Error during JSON unmarshal:", err)
-		return "", err
-	}
-
-	for key, value := range ruleMap {
-		if value == "null" {
-			delete(ruleMap, key)
-		}
-	}
-
-	//execute marshaling of the ruleMap without "null" values into a JSON string
-	ruleMapBytes, errMar := json.Marshal(ruleMap)
-	if errMar != nil {
-		log.SetPrefix("[ERROR] ")
-		log.Println("Error during JSON marshal of final string:", err)
-		return "", err
-	}
-
-	return string(ruleMapBytes), nil
-
-}
-
-// TODO: maybe we have to change it in order to return a JSON
-func formatRulesResponse(rules []wmsUtils.ShowRulesOutput) string {
-	stringToBeReturned := "No rules inserted!"
-	locationRulesString := ""
-	counter := 1
-
-	for _, rule := range rules {
-		ruleLocationMapString, err := json.Marshal(rule.Location)
-		if err != nil {
-			return fmt.Sprintf("Error in marshaling rule.Location: %v\n", err)
-		}
-		triggerPeriodMapString, errM := json.Marshal(rule.TriggerPeriod)
-		if errM != nil {
-			return fmt.Sprintf("Error in marshaling rule.TriggerPeriod: %v\n", errM)
-		}
-		ruleMapString, errReduce := reduceRuleMap(rule.Rules)
-		if errReduce != nil {
-			return fmt.Sprintf("Error in reduceRuleMap: %v\n", errReduce)
-		}
-		tempString := fmt.Sprintf("LOCATION {%d}<br>%s<br>%s<br>trigger period: %s<br><br>", counter, ruleLocationMapString, ruleMapString, triggerPeriodMapString)
-		locationRulesString = locationRulesString + tempString
-		counter++
-	}
-	if locationRulesString != "" {
-		stringToBeReturned = locationRulesString
-	}
-	return stringToBeReturned
-}
 
 func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 
@@ -161,9 +93,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			rulesListItem.TriggerPeriod = triggerPeriod
 			rulesList = append(rulesList, rulesListItem)
 		}
-		stringToReturn := formatRulesResponse(rulesList)
-		//TODO: for now we return a string: maybe we can return a JSON
-		wmsUtils.SetResponseMessage(writer, http.StatusOK, fmt.Sprintf("YOUR RULES: <br><br> %s", stringToReturn))
+		wmsUtils.SetJSONResponse(writer, http.StatusOK, rulesList)
 		return
 	}
 }

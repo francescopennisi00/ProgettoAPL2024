@@ -1,6 +1,7 @@
 package wms_utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -72,6 +73,15 @@ type KafkaMessage struct {
 	MaxCloudList      []string `json:"max_cloud"`
 	MinCloudList      []string `json:"min_cloud"`
 	RowsIdList        []string `json:"rows_id"`
+}
+
+func SetJSONResponse(w http.ResponseWriter, code int, output []ShowRulesOutput) {
+	w.WriteHeader(code)
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(output)
+	if err != nil {
+		SetResponseMessage(w, http.StatusInternalServerError, fmt.Sprintf("Error in encoding JSON response: %v", err))
+	}
 }
 
 func SetResponseMessage(w http.ResponseWriter, code int, message string) {
