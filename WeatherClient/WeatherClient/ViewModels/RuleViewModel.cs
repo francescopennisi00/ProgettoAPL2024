@@ -1,68 +1,70 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Input;
+using WeatherClient.Utilities;
 
 namespace WeatherClient.ViewModels;
 
 internal class RuleViewModel : ObservableObject, IQueryAttributable
 {
-    private Models.Rule _note;
-    public DateTime Date => _note.Date;
+    private Models.Rule _rule;
+    public WeatherParameters Rules => _rule.Rules;
 
-    public string Identifier => _note.Filename;
+    public string TriggerPeriod => _rule.TriggerPeriod;
+    public string[] Location => _rule.Location;
 
     public ICommand SaveCommand { get; private set; }
     public ICommand DeleteCommand { get; private set; }
     public RuleViewModel()
     {
-        _note = new Models.Rule();
+        _rule = new Models.Rule();
         SaveCommand = new AsyncRelayCommand(Save);
         DeleteCommand = new AsyncRelayCommand(Delete);
     }
 
-    public RuleViewModel(Models.Rule note)
+    public RuleViewModel(Models.Rule rule)
     {
-        _note = note;
+        _rule = rule;
         SaveCommand = new AsyncRelayCommand(Save);
         DeleteCommand = new AsyncRelayCommand(Delete);
     }
-    public string Text
+    public string MaxTemp
     {
-        get => _note.Text;
+        get => _rule.Rules.MaxTemp;
         set
         {
-            if (_note.Text != value)
+            if (_rule.Rules.MaxTemp != value)
             {
-                _note.Text = value;
+                _rule.Rules.MaxTemp = value;
                 OnPropertyChanged();
             }
         }
     }
     private async Task Save()
     {
-        _note.Date = DateTime.Now;
-        _note.Save();
-        await Shell.Current.GoToAsync($"..?saved={_note.Filename}");
+        _rule.Date = DateTime.Now;
+        _rule.Save();
+        await Shell.Current.GoToAsync($"..?saved={_rule.Filename}");
     }
 
     private async Task Delete()
     {
-        _note.Delete();
-        await Shell.Current.GoToAsync($"..?deleted={_note.Filename}");
+        _rule.Delete();
+        await Shell.Current.GoToAsync($"..?deleted={_rule.Id}");
     }
 
     void IQueryAttributable.ApplyQueryAttributes(IDictionary<string, object> query)
     {
         if (query.ContainsKey("load"))
         {
-            _note = Models.Rule.Load(query["load"].ToString());
+            _rule = Models.Rule.Load(query["load"].ToString());
             RefreshProperties();
         }
     }
 
     public void Reload()
     {
-        _note = Models.Rule.Load(_note.Filename);
+        _rule = Models.Rule.Load(_rule.Filename);
         RefreshProperties();
     }
 
