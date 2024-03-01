@@ -48,7 +48,8 @@ internal class Rule
     private static string GetToken()
     {
         // Get the folder where the tokes is stored.
-        string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
+        // string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
+        string appDataPath = @"C:\Users\Utente\Desktop\token.txt";
         string token = File.ReadAllText(appDataPath);
         return token;
     }
@@ -106,8 +107,8 @@ internal class Rule
         string url = Constants.urlShow;
         string token = GetToken();
         HttpClient httpC = new HttpClient();
-        httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer ", token);
-        HttpResponseMessage response = await httpC.GetAsync(url);
+        httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var response = await httpC.GetAsync(url);
         if (response.IsSuccessStatusCode)
         {
             string responseContent = await response.Content.ReadAsStringAsync();
