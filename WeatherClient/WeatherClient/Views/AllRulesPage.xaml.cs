@@ -9,6 +9,6 @@ public partial class AllRulesPage : ContentPage
     }
     private void ContentPage_NavigatedTo(object sender, NavigatedToEventArgs e)
     {
-        notesCollection.SelectedItem = null;
+        rulesCollection.SelectedItem = null;
     }
 }

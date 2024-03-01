@@ -8,74 +8,44 @@ using System.Net;
 using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 using WeatherClient.Utilities;
+using WeatherClient.Exceptions;
+
 namespace WeatherClient.Models;
 
 internal class Rule
 {
     [JsonProperty("rules")]
-    public WeatherParameters Rules { get; private set; }
+    public WeatherParameters? Rules { get; set; }
 
     [JsonProperty("trigger_period")]
-    public string TriggerPeriod { get; set; }
+    public string? TriggerPeriod { get; set; }
 
     [JsonProperty("location")]
-    public string[] Location { get; set; }
+    public List<string>? Location { get; set; }
 
     [JsonProperty("id")]
-    public string Id { get; set; }
+    public string? Id { get; set; }
 
 
     public Rule()
     {
+        Rules = new WeatherParameters();
+        TriggerPeriod = string.Empty;
+        List<string> Location = new();
+        Id = string.Empty;
     }
 
-    /*public void Save() =>
-        File.WriteAllText(System.IO.Path.Combine(FileSystem.AppDataDirectory, Filename), Text);
-    */
-    public void Delete(string Id) {
-        string url = "http://weather.com:9090/update_rules/delete_user_constraints_by_location";
-        string token = GetToken();
-        using (HttpClient client = new HttpClient())
-        {
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer ", token);
-
-            HttpResponseMessage response = await client.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
-            {
-                string responseContent = await response.Content.ReadAsStringAsync();
-                // Supponendo che il contenuto della risposta sia una lista di regole in formato JSON
-                // E che tu abbia una classe Rule con un metodo statico Parse per convertire il JSON in un oggetto Rule
-                return Utilities.JsonUtility.DeserializeJSON<IEnumerable<Rule>>(responseContent);
-            }
-            else if (response.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                await Shell.Current.GoToAsync(nameof(Views.LoginPage));
-                return Enumerable.Empty<Rule>(); // Restituisci una collezione vuota in caso di Unauthorized
-            }
-            else
-            {
-                string responseContent = await response.Content.ReadAsStringAsync();
-                // Gestione degli errori, ad esempio log o lancio di un'eccezione
-                throw new Exception($"Failed to load rules. Status code: {response.StatusCode},{responseContent}");
-            }
-        }
-    }
-    public static Rule Load(string LocationName)
+    public Rule(string id, string locName, string lat, string lon, string cCode, string sCode, string triggerP, string maxT,
+        string minT, string maxH, string minH, string maxP, string minP, string maxWS, string minWS, string direction, string rain,
+        string snow, string maxC, string minC)
     {
-        filename = System.IO.Path.Combine(FileSystem.AppDataDirectory, filename);
-
-        if (!File.Exists(filename))
-            throw new FileNotFoundException("Unable to find file on local storage.", filename);
-
-        return
-            new()
-            {
-                Rules = 
-            };
+        Rules = new WeatherParameters(maxT, minT, maxH, minH, maxP, minP, maxWS, minWS, direction, rain, snow, maxC, minC);
+        TriggerPeriod = triggerP;
+        Location = new List<string> { locName, lat, lon, cCode, sCode };
+        Id = id;
     }
 
-    public static string GetToken()
+    private static string GetToken()
     {
         // Get the folder where the tokes is stored.
         string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
@@ -83,40 +53,73 @@ internal class Rule
         return token;
     }
 
-    public static async Task<IEnumerable<Rule>> LoadAllAsync()
+    private async Task<int> DoRequest(string url)
     {
-        string url = "http://weather.com:9090/show_rules";
         string token = GetToken();
-        using (HttpClient client = new HttpClient())
+        HttpClient httpC = new HttpClient();
+        httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer ", token);
+        string jsonData = Utilities.JsonUtility.SerializeJSON(this);
+        var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+        HttpResponseMessage response = await httpC.PostAsync(url, content);
+        return (int)response.StatusCode;
+    }
+
+    public async Task<int> Save()
+    {
+        return await DoRequest(Utilities.Constants.urlUpdate);
+    }
+
+    public async Task<int> Delete()
+    {
+        return await DoRequest(Utilities.Constants.urlDelete);
+    }
+
+    public static Rule Load(string id)
+    {
+        IEnumerable<Rule> rules = LoadAll();
+        foreach (Rule rule in rules)
         {
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer ", token);
-
-            HttpResponseMessage response = await client.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
+            if (rule.Id == id)
             {
-                string responseContent = await response.Content.ReadAsStringAsync();
-                // Supponendo che il contenuto della risposta sia una lista di regole in formato JSON
-                // E che tu abbia una classe Rule con un metodo statico Parse per convertire il JSON in un oggetto Rule
-                return Utilities.JsonUtility.DeserializeJSON<IEnumerable<Rule>>(responseContent);
-            }
-            else if (response.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                await Shell.Current.GoToAsync(nameof(Views.LoginPage));
-                return Enumerable.Empty<Rule>(); // Restituisci una collezione vuota in caso di Unauthorized
-            }
-            else
-            {   
-                string responseContent = await response.Content.ReadAsStringAsync();
-                // Gestione degli errori, ad esempio log o lancio di un'eccezione
-                throw new Exception($"Failed to load rules. Status code: {response.StatusCode},{responseContent}");
+                return new()
+                {
+                    Rules = rule.Rules,
+                    Id = rule.Id,
+                    TriggerPeriod = rule.TriggerPeriod,
+                    Location = rule.Location
+                };
             }
         }
+        throw new Exception("Error! Rule not found!");
     }
+ 
+
+    public static async Task<IEnumerable<Rule>> LoadAllAsync()
+    {
+        string url = Constants.urlShow;
+        string token = GetToken();
+        HttpClient httpC = new HttpClient();
+        httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer ", token);
+        HttpResponseMessage response = await httpC.GetAsync(url);
+        if (response.IsSuccessStatusCode)
+        {
+            string responseContent = await response.Content.ReadAsStringAsync();
+            return JsonUtility.DeserializeJSON<IEnumerable<Rule>>(responseContent);
+        }
+        else if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+        }
+        else
+        {
+            throw new ServerException("Failed to load rules due an internal server error.");
+        }
+    }
+
     public static IEnumerable<Rule> LoadAll()
     {
         Task <IEnumerable<Rule>> task = LoadAllAsync();
-        IEnumerable<Models.Rule> rules = task.Result;
+        IEnumerable<Rule> rules = task.Result;
         return rules;
     }
 

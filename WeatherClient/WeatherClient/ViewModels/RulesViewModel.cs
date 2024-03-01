@@ -7,14 +7,14 @@ namespace WeatherClient.ViewModels;
 
 internal class RulesViewModel : IQueryAttributable
 {
-    public ObservableCollection<ViewModels.RuleViewModel> AllRules { get; }
+    public ObservableCollection<RuleViewModel> AllRules { get; }
     public ICommand NewCommand { get; }
     public ICommand SelectNoteCommand { get; }
     public RulesViewModel()
     {
-        AllRules = new ObservableCollection<ViewModels.RuleViewModel>(Models.Rule.LoadAll().Select(n => new RuleViewModel(n)));
+        AllRules = new ObservableCollection<RuleViewModel>(Rule.LoadAll().Select(n => new RuleViewModel(n)));
         NewCommand = new AsyncRelayCommand(NewNoteAsync);
-        SelectNoteCommand = new AsyncRelayCommand<ViewModels.RuleViewModel>(SelectNoteAsync);
+        SelectNoteCommand = new AsyncRelayCommand<RuleViewModel>(SelectNoteAsync);
     }
 
     private async Task NewNoteAsync()
@@ -22,10 +22,10 @@ internal class RulesViewModel : IQueryAttributable
         await Shell.Current.GoToAsync(nameof(Views.RulesPage));
     }
 
-    private async Task SelectNoteAsync(ViewModels.RuleViewModel note)
+    private async Task SelectNoteAsync(RuleViewModel rule)
     {
-        if (note != null)
-            await Shell.Current.GoToAsync($"{nameof(Views.RulesPage)}?load={note.Identifier}");
+        if (rule != null)
+            await Shell.Current.GoToAsync($"{nameof(Views.RulesPage)}?load={rule.Id}");
     }
 
     void IQueryAttributable.ApplyQueryAttributes(IDictionary<string, object> query)
@@ -35,7 +35,7 @@ internal class RulesViewModel : IQueryAttributable
             string LocationID = query["deleted"].ToString();
             RuleViewModel matcheRule = AllRules.Where((n) => n.Location[0] == LocationID).FirstOrDefault();
 
-            // If note exists, delete it
+            // If rule exists, delete it
             if (matcheRule != null)
                 AllRules.Remove(matcheRule);
         }
@@ -44,14 +44,14 @@ internal class RulesViewModel : IQueryAttributable
             string LocationID = query["saved"].ToString();
             RuleViewModel matchedRule = AllRules.Where((n) => n.Location[0] == LocationID).FirstOrDefault();
 
-            // If note is found, update it
+            // If rule is found, update it
             if (matchedRule != null)
             {
                 matchedRule.Reload();
                 AllRules.Move(AllRules.IndexOf(matchedRule), 0);
             }
 
-            // If note isn't found, it's new; add it.
+            // If rule isn't found, it's new; add it.
             else
                 AllRules.Insert(0, new RuleViewModel(Models.Rule.Load(LocationID)));
         }
