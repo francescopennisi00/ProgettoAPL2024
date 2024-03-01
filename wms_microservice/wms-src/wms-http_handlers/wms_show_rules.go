@@ -54,19 +54,18 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
 		return
 	}
+	var rulesList []wmsUtils.ShowRulesOutput // List of (location_info, rules, trigger_period key-value pairs)
 	query := fmt.Sprintf("SELECT location_id, rules, trigger_period FROM user_constraints WHERE user_id = %d", idUser)
 	_, userConstraintsRows, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
-			wmsUtils.SetResponseMessage(writer, http.StatusOK, "There is no rules that you have indicated! Please insert location, rules and trigger period!")
+			wmsUtils.SetJSONResponse(writer, http.StatusOK, rulesList)
 			return
 		} else {
 			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select from 'user_constraints' table: %v", errorVar))
 			return
 		}
 	} else {
-
-		var rulesList []wmsUtils.ShowRulesOutput // List of (location_info, rules, trigger_period key-value pairs)
 
 		for _, userConstraintsRow := range userConstraintsRows {
 			locationId := userConstraintsRow[0]
