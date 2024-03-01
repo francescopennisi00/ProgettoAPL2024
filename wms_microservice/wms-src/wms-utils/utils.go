@@ -50,6 +50,7 @@ type ShowRulesOutput struct {
 	Rules         RulesIntoDB `json:"rules"`
 	Location      []string    `json:"location"`
 	TriggerPeriod string      `json:"trigger_period"`
+	Id            string      `json:"id"`
 }
 
 type LocationType struct {

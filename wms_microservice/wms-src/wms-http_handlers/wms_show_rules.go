@@ -55,7 +55,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	var rulesList []wmsUtils.ShowRulesOutput // List of (location_info, rules, trigger_period key-value pairs)
-	query := fmt.Sprintf("SELECT location_id, rules, trigger_period FROM user_constraints WHERE user_id = %d", idUser)
+	query := fmt.Sprintf("SELECT location_id, rules, trigger_period, id FROM user_constraints WHERE user_id = %d", idUser)
 	_, userConstraintsRows, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
@@ -71,6 +71,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			locationId := userConstraintsRow[0]
 			rulesJsonString := userConstraintsRow[1]
 			triggerPeriod := userConstraintsRow[2]
+			idRow := userConstraintsRow[3]
 
 			// query to DB in order to retrieve information about location by location_id
 			query = fmt.Sprintf("SELECT location_name, latitude, longitude, state_code FROM locations WHERE id = %s", locationId)
@@ -90,6 +91,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			}
 			rulesListItem.Rules = rules
 			rulesListItem.TriggerPeriod = triggerPeriod
+			rulesListItem.Id = idRow
 			rulesList = append(rulesList, rulesListItem)
 		}
 		wmsUtils.SetJSONResponse(writer, http.StatusOK, rulesList)
