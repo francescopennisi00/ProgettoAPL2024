@@ -53,7 +53,7 @@ internal class Rule
         return token;
     }
 
-    private async Task<int> DoRequest(string url)
+    private async Task DoRequest(string url)
     {
         string token = GetToken();
         HttpClient httpC = new HttpClient();
@@ -61,17 +61,24 @@ internal class Rule
         string jsonData = Utilities.JsonUtility.SerializeJSON(this);
         var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
         HttpResponseMessage response = await httpC.PostAsync(url, content);
-        return (int)response.StatusCode;
+        if ((int)response.StatusCode == 401)
+        {
+            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+        }
+        else if ((int)response.StatusCode != 200)
+        {
+            throw new ServerException("Failed to load rules due an internal server error.");
+        }
     }
 
-    public async Task<int> Save()
+    public async void Save()
     {
-        return await DoRequest(Utilities.Constants.urlUpdate);
+        await DoRequest(Utilities.Constants.urlUpdate);
     }
 
-    public async Task<int> Delete()
+    public async void Delete()
     {
-        return await DoRequest(Utilities.Constants.urlDelete);
+        await DoRequest(Utilities.Constants.urlDelete);
     }
 
     public static Rule Load(string id)

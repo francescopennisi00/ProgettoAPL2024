@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Input;
+using WeatherClient.Exceptions;
 
 namespace WeatherClient.ViewModels;
 
@@ -405,20 +406,33 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
 
     private async Task Save()
     {
-        int statusCode = await _rule.Save();
-        if (statusCode == 200)
+        try
         {
-            await Shell.Current.GoToAsync($"..?saved={_rule.Id}");
-        }
-        else if (statusCode == 401)
+            _rule.Save();
+        } catch (TokenNotValidException exc)
         {
-
+            /*creare pannello x andare alla login*/
+        } catch (ServerException exc)
+        {
+            /* creare pannello per tornare alla home rules*/
         }
+        await Shell.Current.GoToAsync($"..?saved={_rule.Id}");
     }
 
     private async Task Delete()
     {
-        _rule.Delete();
+        try
+        {
+            _rule.Delete();
+        }
+        catch (TokenNotValidException exc)
+        {
+            /*creare pannello x andare alla login*/
+        }
+        catch (ServerException exc)
+        {
+            /* creare pannello per tornare alla home rules*/
+        }
         await Shell.Current.GoToAsync($"..?deleted={_rule.Id}");
     }
 
