@@ -192,59 +192,9 @@ if __name__ == "__main__":
 
             else:
 
-                # Check for Kafka message
-
-                # each Kafka message is related to a single location, in order to reduce as much as
-                # possible the number of OpenWeatherAPI query that worker must do, and it is a JSON
-                # that contains many key-value pairs such as key = "location" and value = location
-                # info in a list, then key = "user_id" and value = list of user_id of the users that are
-                # interested in the location, and lastly many other key-value pairs with
-                # key = rule_name and value = target value list for all the user according the order of
-                # user id in user_id list
-
-                # if a user is not interested in a specific rule for the location, then its rule value
-                # corresponding to the user id is set at "null", while if no user is interested in a
-                # specific rule for the location, then the key-value pair with key = rule name is not
-                # in the Kafka message
-
-                record_key = msg.key()
-                logger.info("RECORD_KEY: " + str(record_key))
-                record_value = msg.value()
-                logger.info("RECORD_VALUE: " + str(record_value))
-                data = json.loads(record_value)
-                logger.info("DATA: " + str(data))
-                # update current_work in DB
-                userId_list = data.get("user_id")
-                logger.info("USER_ID_LIST: " + str(userId_list))
-                loc = data.get('location')
-                logger.info("LOCATION: " + str(loc))
-
-                # connection with DB and store event message to be published
-
-                db = DatabaseConnector(
-                    hostname=os.environ.get("HOSTNAME"),
-                    port=os.environ.get("PORT"),
-                    user=os.environ.get("USER"),
-                    password=os.environ.get("PASSWORD"),
-                    database=os.environ.get("DATABASE")
-                )
-                for i in range(0, len(userId_list)):
-                    temp_dict = dict()
-                    for key in set(data.keys()):
-                        if key != "location" and key != "rows_id":
-                            temp_dict[key] = data.get(key)[i]
-                    temp_dict['location'] = loc
-                    json_to_insert = json.dumps(temp_dict)
-                    if not db.execute_query(
-                        query="INSERT INTO current_work (rules, time_stamp) VALUES (%s, CURRENT_TIMESTAMP())",
-                        params=(json_to_insert, ),
-                        commit=False,
-                        select=False
-                    ):
-                        raise SystemExit
-                if not db.commit_update():  # to make changes effective after inserting ALL the violated_rules
+                # consume Kafka message
+                if KafkaConsumer.consume_kafka_message(msg) is False:
                     raise SystemExit("Error in commit updates in DB")
-                db.close()
 
                 # make commit to Kafka broker after Kafka msg has been stored in DB
                 # we give some attempts to retrying commit in order to avoid potential

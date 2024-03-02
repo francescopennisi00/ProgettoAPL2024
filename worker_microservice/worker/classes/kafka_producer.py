@@ -1,6 +1,5 @@
 import os
 import time
-
 import confluent_kafka
 from confluent_kafka.admin import AdminClient, NewTopic
 from worker.classes.database_connector import DatabaseConnector
