@@ -31,8 +31,8 @@
         <CollectionView.ItemTemplate>
             <DataTemplate>
                 <StackLayout>
-                    <Label Text="{Binding Text}" FontSize="22"/>
-                    <Label Text="{Binding Date}" FontSize="14" TextColor="Silver"/>
+                    <Label Text="{Binding Location[0]}" FontSize="22" TextColor="Silver"/>
+                    <Label Text="{Binding TriggerPeriod}" FontSize="14"/>
                 </StackLayout>
             </DataTemplate>
         </CollectionView.ItemTemplate>

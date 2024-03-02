@@ -25,7 +25,7 @@ internal class WeatherParameters
 		[JsonProperty("max_wind_speed")]
 		public string? MaxWindSpeed { get; set; }
 
-		[JsonProperty("min_wind_pressure")]
+		[JsonProperty("min_wind_speed")]
 		public string? MinWindSpeed { get; set; }
 
 		[JsonProperty("wind_direction")]
@@ -45,19 +45,19 @@ internal class WeatherParameters
 
 	public WeatherParameters()
     {
-		MaxTemp = null;
-		MinTemp = null;
-		MaxHumidity = null;
-		MinHumidity = null;
-		MaxPressure = null;
-		MinPressure = null;
-		MaxWindSpeed = null;
-		MinWindSpeed = null;
-		WindDirection = null;
-		Rain = null;
-		Snow = null;
-		MaxCloud = null;
-		MinCloud = null;
+		MaxTemp = "null";
+		MinTemp = "null";
+		MaxHumidity = "null";
+		MinHumidity = "null";
+		MaxPressure = "null";
+		MinPressure = "null";
+		MaxWindSpeed = "null";
+		MinWindSpeed = "null";
+		WindDirection = "null";
+		Rain = "null";
+		Snow = "null";
+		MaxCloud = "null";
+		MinCloud = "null";
 	}
 
     public WeatherParameters(string maxT, string minT, string maxH, string minH, string maxP, string minP, string maxWS, string minWS,

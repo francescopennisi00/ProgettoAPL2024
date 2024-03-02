@@ -9,379 +9,381 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
 {
     private Models.Rule _rule;
 
-    public string? TriggerPeriod => _rule.TriggerPeriod;
     public List<string>? Location => _rule.Location;
     public string? Id => _rule.Id;
 
-    public bool IsMaxTempVisible { get; set; }
+    public string? TriggerPeriod
+    {
+        get => _rule.TriggerPeriod;
+        set
+        {
+            _rule.TriggerPeriod = value;
+            OnPropertyChanged();
+            
+        }
+    }
+
     public string? MaxTemp
     {
         get
-        { 
+        {
             if (_rule.Rules.MaxTemp == "null")
             {
-                IsMaxTempVisible = false;
-                OnPropertyChanged(nameof(IsMaxTempVisible));
-            } else
-            {
-                IsMaxTempVisible = true;
-                OnPropertyChanged(nameof(IsMaxTempVisible));
+                return null;
             }
-            return _rule.Rules.MaxTemp;
+            else
+            {
+                return _rule.Rules.MaxTemp;
+            }
         }
         set
         {
-            if (_rule.Rules.MaxTemp != value)
+            if (value != null)
             {
                 _rule.Rules.MaxTemp = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MaxTemp = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsMinTempVisible { get; set; }
     public string? MinTemp
     {
         get
         {
             if (_rule.Rules.MinTemp == "null")
             {
-                IsMinTempVisible = false;
-                OnPropertyChanged(nameof(IsMinTempVisible));
+                return null;
             }
             else
             {
-                IsMinTempVisible = true;
-                OnPropertyChanged(nameof(IsMinTempVisible));
+                return _rule.Rules.MinTemp;
             }
-            return _rule.Rules.MinTemp;
         }
         set
         {
-            if (_rule.Rules.MinTemp != value)
+            if (value != null)
             {
                 _rule.Rules.MinTemp = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MinTemp = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsMaxHumVisible { get; set; }
     public string? MaxHumidity
     {
         get
         {
             if (_rule.Rules.MaxHumidity == "null")
             {
-                IsMaxHumVisible = false;
-                OnPropertyChanged(nameof(IsMaxHumVisible));
+                return null;
             }
             else
             {
-                IsMaxHumVisible = true;
-                OnPropertyChanged(nameof(IsMaxHumVisible));
+                return _rule.Rules.MaxHumidity;
             }
-            return _rule.Rules.MaxHumidity;
         }
         set
         {
-            if (_rule.Rules.MaxHumidity != value)
+            if (value != null)
             {
                 _rule.Rules.MaxHumidity = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MaxHumidity = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsMinHumVisible { get; set; }
     public string? MinHumidity
     {
         get
         {
             if (_rule.Rules.MinHumidity == "null")
             {
-                IsMinHumVisible = false;
-                OnPropertyChanged(nameof(IsMinHumVisible));
+                return null;
             }
             else
             {
-                IsMinHumVisible = true;
-                OnPropertyChanged(nameof(IsMinHumVisible));
+                return _rule.Rules.MinHumidity;
             }
-            return _rule.Rules.MinHumidity;
         }
         set
         {
-            if (_rule.Rules.MinHumidity != value)
+            if (value != null)
             {
                 _rule.Rules.MinHumidity = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MinHumidity = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsMaxPressVisible { get; set; }
     public string? MaxPressure
     {
         get
         {
             if (_rule.Rules.MaxPressure == "null")
             {
-                IsMaxPressVisible = false;
-                OnPropertyChanged(nameof(IsMaxPressVisible));
+                return null;
             }
             else
             {
-                IsMaxPressVisible = true;
-                OnPropertyChanged(nameof(IsMaxPressVisible));
+                return _rule.Rules.MaxPressure;
             }
-            return _rule.Rules.MaxPressure;
         }
         set
         {
-            if (_rule.Rules.MaxPressure != value)
+            if (value != null)
             {
                 _rule.Rules.MaxPressure = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MaxPressure = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsMinPressVisible { get; set; }
     public string? MinPressure
     {
         get
         {
             if (_rule.Rules.MinPressure == "null")
             {
-                IsMinPressVisible = false;
-                OnPropertyChanged(nameof(IsMinPressVisible));
+                return null;
             }
             else
             {
-                IsMinPressVisible = true;
-                OnPropertyChanged(nameof(IsMinPressVisible));
+                return _rule.Rules.MinPressure;
             }
-            return _rule.Rules.MinPressure;
         }
         set
         {
-            if (_rule.Rules.MinPressure != value)
+            if (value != null)
             {
                 _rule.Rules.MinPressure = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MinPressure = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsMaxWindSpeedVisible { get; set; }
     public string? MaxWindSpeed
     {
         get
         {
             if (_rule.Rules.MaxWindSpeed == "null")
             {
-                IsMaxWindSpeedVisible = false;
-                OnPropertyChanged(nameof(IsMaxWindSpeedVisible));
+                return null;
             }
             else
             {
-                IsMaxWindSpeedVisible = true;
-                OnPropertyChanged(nameof(IsMaxWindSpeedVisible));
+                return _rule.Rules.MaxWindSpeed;
             }
-            return _rule.Rules.MaxWindSpeed;
         }
         set
         {
-            if (_rule.Rules.MaxWindSpeed != value)
+            if (value != null)
             {
                 _rule.Rules.MaxWindSpeed = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MaxWindSpeed = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsMinWindSpeedVisible { get; set; }
     public string? MinWindSpeed
     {
         get
         {
             if (_rule.Rules.MinWindSpeed == "null")
             {
-                IsMinWindSpeedVisible = false;
-                OnPropertyChanged(nameof(IsMinWindSpeedVisible));
+                return null;
             }
             else
             {
-                IsMinWindSpeedVisible = true;
-                OnPropertyChanged(nameof(IsMinWindSpeedVisible));
+                return _rule.Rules.MinWindSpeed;
             }
-            return _rule.Rules.MinWindSpeed;
         }
         set
         {
-            if (_rule.Rules.MinWindSpeed != value)
+            if (value != null)
             {
                 _rule.Rules.MinWindSpeed = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MinWindSpeed = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsWindDirectionVisible { get; set; }
     public string? WindDirection
     {
         get
         {
             if (_rule.Rules.WindDirection == "null")
             {
-                IsWindDirectionVisible = false;
-                OnPropertyChanged(nameof(IsWindDirectionVisible));
+                return null;
             }
             else
             {
-                IsWindDirectionVisible = true;
-                OnPropertyChanged(nameof(IsWindDirectionVisible));
+                return _rule.Rules.WindDirection;
             }
-            return _rule.Rules.WindDirection;
         }
         set
         {
-            if (_rule.Rules.WindDirection != value)
+            if (value != null)
             {
                 _rule.Rules.WindDirection = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.WindDirection = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsRainVisible { get; set; }
     public bool? Rain
     {
         get
         {
             if (_rule.Rules.Rain == "null")
             {
-                IsRainVisible = false;
-                OnPropertyChanged(nameof(IsRainVisible));
                 return false;
             }
             else
             {
-                IsRainVisible = true;
-                OnPropertyChanged(nameof(IsRainVisible));
                 return true;
             }
         }
         set
         {
-            if (_rule.Rules.Rain == "null")
+            if (value == true)
             {
-                if (value == true)
-                {
-                    _rule.Rules.Rain = "rain";
-                    OnPropertyChanged();
-                }
+                _rule.Rules.Snow = "rain";
+                OnPropertyChanged();
             }
             else
             {
-                if (value == false)
-                {
-                    _rule.Rules.Rain = "null";
-                    OnPropertyChanged();
-                }
+                _rule.Rules.Snow = "null";
+                OnPropertyChanged();
             }
         }
     }
 
-    public bool IsSnowVisible { get; set; }
     public bool? Snow
     {
         get
         {
             if (_rule.Rules.Snow == "null")
             {
-                IsSnowVisible = false;
-                OnPropertyChanged(nameof(IsSnowVisible));
                 return false;
             }
             else
             {
-                IsSnowVisible = true;
-                OnPropertyChanged(nameof(IsSnowVisible));
                 return true;
             }
         }
         set
         {
-            if (_rule.Rules.Snow == "null")
+
+            if (value == true)
             {
-                if (value == true)
-                {
-                    _rule.Rules.Snow = "snow";
-                    OnPropertyChanged();
-                }
+                _rule.Rules.Snow = "snow";
+                OnPropertyChanged();
             }
             else
             {
-                if (value == false)
-                {
-                    _rule.Rules.Snow = "null";
-                    OnPropertyChanged();
-                }
+                _rule.Rules.Snow = "null";
+                OnPropertyChanged();
             }
+            
         }
     }
 
-    public bool IsMaxCloudVisible { get; set; }
     public string? MaxCloud
     {
         get
         {
-            if (_rule.Rules.MaxCloud == "null")
+            if( _rule.Rules.MaxCloud == "null")
             {
-                IsMaxCloudVisible = false;
-                OnPropertyChanged(nameof(IsMaxCloudVisible));
+                return null;
             }
             else
             {
-                IsMaxCloudVisible = true;
-                OnPropertyChanged(nameof(IsMaxCloudVisible));
+                return _rule.Rules.MaxCloud;
             }
-            return _rule.Rules.MaxCloud;
         }
         set
         {
-            if (_rule.Rules.MaxCloud != value)
+            if (value != null)
             {
                 _rule.Rules.MaxCloud = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MaxCloud = "null";
                 OnPropertyChanged();
             }
         }
     }
 
-    public bool IsMinCloudVisible { get; set; }
     public string? MinCloud
     {
         get
         {
             if (_rule.Rules.MinCloud == "null")
             {
-                IsMinCloudVisible = false;
-                OnPropertyChanged(nameof(IsMinCloudVisible));
+                return null;
             }
             else
             {
-                IsMinCloudVisible = true;
-                OnPropertyChanged(nameof(IsMinCloudVisible));
+                return _rule.Rules.MinCloud;
             }
-            return _rule.Rules.MinCloud;
         }
         set
         {
-            if (_rule.Rules.MinCloud != value)
+            if (value != null)
             {
                 _rule.Rules.MinCloud = value;
+                OnPropertyChanged();
+            }
+            else
+            {
+                _rule.Rules.MinCloud = "null";
                 OnPropertyChanged();
             }
         }
