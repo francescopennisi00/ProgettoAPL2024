@@ -199,7 +199,7 @@ func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
 	var kMessage wmsUtils.KafkaMessage
 	for _, userConstraintsRow := range userConstraintsRows {
 
-		var rulesJson wmsUtils.Rules
+		var rulesJson wmsUtils.RulesIntoDB
 		if err := json.Unmarshal([]byte(userConstraintsRow[3]), &rulesJson); err != nil {
 			log.SetPrefix("[ERROR] ")
 			log.Printf("Error during unmarshaling of rules JSON from DB into KafkaMessage type: %v\n", err)

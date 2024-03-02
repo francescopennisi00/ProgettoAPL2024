@@ -12,24 +12,6 @@ type Credentials struct {
 	Password string
 }
 
-type Rules struct {
-	TriggerPeriod string   `json:"trigger_period"`
-	LocationInfo  []string `json:"location"`
-	MaxTemp       string   `json:"max_temp"`
-	MinTemp       string   `json:"min_temp"`
-	MaxHumidity   string   `json:"max_humidity"`
-	MinHumidity   string   `json:"min_humidity"`
-	MaxPressure   string   `json:"max_pressure"`
-	MinPressure   string   `json:"min_pressure"`
-	MaxWindSpeed  string   `json:"max_wind_speed"`
-	MinWindSpeed  string   `json:"min_wind_speed"`
-	WindDirection string   `json:"wind_direction"`
-	Rain          string   `json:"rain"`
-	Snow          string   `json:"snow"`
-	MaxCloud      string   `json:"max_cloud"`
-	MinCloud      string   `json:"min_cloud"`
-}
-
 type RulesIntoDB struct {
 	MaxTemp       string `json:"max_temp"`
 	MinTemp       string `json:"min_temp"`
@@ -44,6 +26,12 @@ type RulesIntoDB struct {
 	Snow          string `json:"snow"`
 	MaxCloud      string `json:"max_cloud"`
 	MinCloud      string `json:"min_cloud"`
+}
+
+type RulesFromPostRequest struct {
+	Rules         RulesIntoDB `json:"rules"`
+	Location      []string    `json:"location"`
+	TriggerPeriod string      `json:"trigger_period"`
 }
 
 type ShowRulesOutput struct {

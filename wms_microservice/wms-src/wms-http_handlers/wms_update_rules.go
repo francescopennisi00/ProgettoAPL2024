@@ -25,7 +25,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error: the request must be in JSON format")
 		return
 	}
-	var rules wmsUtils.Rules
+	var rules wmsUtils.RulesFromPostRequest
 	err := json.NewDecoder(request.Body).Decode(&rules)
 	if err != nil {
 		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error in reading data: %v", err))
@@ -56,21 +56,21 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	triggerPeriod := rules.TriggerPeriod
-	locationName := rules.LocationInfo[0]
-	locationLatitude := rules.LocationInfo[1]
+	locationName := rules.Location[0]
+	locationLatitude := rules.Location[1]
 	latitudeFloat, errConv := strconv.ParseFloat(locationLatitude, 64)
 	if errConv != nil {
 		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during latitude conversion from string to float64: %v", errConv))
 	}
 	roundedLatitude := wmsUtils.Round(latitudeFloat, 3)
-	locationLongitude := rules.LocationInfo[2]
+	locationLongitude := rules.Location[2]
 	longitudeFloat, errParse := strconv.ParseFloat(locationLongitude, 64)
 	if errParse != nil {
 		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during longitude conversion from string to float64: %v", errParse))
 	}
 	roundedLongitude := wmsUtils.Round(longitudeFloat, 3)
-	countryCode := rules.LocationInfo[3]
-	stateCode := rules.LocationInfo[4]
+	countryCode := rules.Location[3]
+	stateCode := rules.Location[4]
 	log.SetPrefix("[INFO] ")
 	log.Printf("LOCATION %s %s %s %s %s\n\n", locationName, locationLatitude, locationLongitude, countryCode, stateCode)
 
@@ -110,19 +110,19 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 
 	// insert rule's values into a RulesIntoDB type variable
 	var rulesIntoDB wmsUtils.RulesIntoDB
-	rulesIntoDB.MaxTemp = rules.MaxTemp
-	rulesIntoDB.MinTemp = rules.MinTemp
-	rulesIntoDB.MaxHumidity = rules.MaxHumidity
-	rulesIntoDB.MinHumidity = rules.MinHumidity
-	rulesIntoDB.MaxPressure = rules.MaxPressure
-	rulesIntoDB.MinPressure = rules.MinPressure
-	rulesIntoDB.MaxWindSpeed = rules.MaxWindSpeed
-	rulesIntoDB.MinWindSpeed = rules.MinWindSpeed
-	rulesIntoDB.WindDirection = rules.WindDirection
-	rulesIntoDB.Rain = rules.Rain
-	rulesIntoDB.Snow = rules.Snow
-	rulesIntoDB.MaxCloud = rules.MaxCloud
-	rulesIntoDB.MinCloud = rules.MinCloud
+	rulesIntoDB.MaxTemp = rules.Rules.MaxTemp
+	rulesIntoDB.MinTemp = rules.Rules.MinTemp
+	rulesIntoDB.MaxHumidity = rules.Rules.MaxHumidity
+	rulesIntoDB.MinHumidity = rules.Rules.MinHumidity
+	rulesIntoDB.MaxPressure = rules.Rules.MaxPressure
+	rulesIntoDB.MinPressure = rules.Rules.MinPressure
+	rulesIntoDB.MaxWindSpeed = rules.Rules.MaxWindSpeed
+	rulesIntoDB.MinWindSpeed = rules.Rules.MinWindSpeed
+	rulesIntoDB.WindDirection = rules.Rules.WindDirection
+	rulesIntoDB.Rain = rules.Rules.Rain
+	rulesIntoDB.Snow = rules.Rules.Snow
+	rulesIntoDB.MaxCloud = rules.Rules.MaxCloud
+	rulesIntoDB.MinCloud = rules.Rules.MinCloud
 
 	jsonRulesBytes, errMar := json.Marshal(rulesIntoDB)
 	if errMar != nil {
