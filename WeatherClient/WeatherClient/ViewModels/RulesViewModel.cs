@@ -13,16 +13,16 @@ internal class RulesViewModel : IQueryAttributable
     public RulesViewModel()
     {
         AllRules = new ObservableCollection<RuleViewModel>(Rule.LoadAll().Select(n => new RuleViewModel(n)));
-        NewCommand = new AsyncRelayCommand(NewNoteAsync);
-        SelectNoteCommand = new AsyncRelayCommand<RuleViewModel>(SelectNoteAsync);
+        NewCommand = new AsyncRelayCommand(NewRuleAsync);
+        SelectNoteCommand = new AsyncRelayCommand<RuleViewModel>(SelectRuleAsync);
     }
 
-    private async Task NewNoteAsync()
+    private async Task NewRuleAsync()
     {
         await Shell.Current.GoToAsync(nameof(Views.RulesPage));
     }
 
-    private async Task SelectNoteAsync(RuleViewModel rule)
+    private async Task SelectRuleAsync(RuleViewModel rule)
     {
         if (rule != null)
             await Shell.Current.GoToAsync($"{nameof(Views.RulesPage)}?load={rule.Id}");
@@ -32,8 +32,8 @@ internal class RulesViewModel : IQueryAttributable
     {
         if (query.ContainsKey("deleted"))
         {
-            string LocationID = query["deleted"].ToString();
-            RuleViewModel matcheRule = AllRules.Where((n) => n.Location[0] == LocationID).FirstOrDefault();
+            string id = query["deleted"].ToString();
+            RuleViewModel matcheRule = AllRules.Where((n) => n.Id == id).FirstOrDefault();
 
             // If rule exists, delete it
             if (matcheRule != null)
@@ -41,8 +41,8 @@ internal class RulesViewModel : IQueryAttributable
         }
         else if (query.ContainsKey("saved"))
         {
-            string LocationID = query["saved"].ToString();
-            RuleViewModel matchedRule = AllRules.Where((n) => n.Location[0] == LocationID).FirstOrDefault();
+            string id = query["saved"].ToString();
+            RuleViewModel matchedRule = AllRules.Where((n) => n.Id == id).FirstOrDefault();
 
             // If rule is found, update it
             if (matchedRule != null)
@@ -53,7 +53,7 @@ internal class RulesViewModel : IQueryAttributable
 
             // If rule isn't found, it's new; add it.
             else
-                AllRules.Insert(0, new RuleViewModel(Models.Rule.Load(LocationID)));
+                AllRules.Insert(0, new RuleViewModel(Models.Rule.Load(id)));
         }
     }
 }

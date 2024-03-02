@@ -9,52 +9,13 @@ using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 using WeatherClient.Utilities;
 using WeatherClient.Exceptions;
-using Windows.Media.Protection.PlayReady;
 
 namespace WeatherClient.Models;
 
 internal class Rule
 {
-    /*[JsonProperty("rules")]
-    public WeatherParameters? Rules { get; set; }*/
-    [JsonProperty("max_temp")]
-    public string? MaxTemp { get; set; }
-
-    [JsonProperty("min_temp")]
-    public string? MinTemp { get; set; }
-
-    [JsonProperty("max_humidity")]
-    public string? MaxHumidity { get; set; }
-
-    [JsonProperty("min_humidity")]
-    public string? MinHumidity { get; set; }
-
-    [JsonProperty("max_pressure")]
-    public string? MaxPressure { get; set; }
-
-    [JsonProperty("min_pressure")]
-    public string? MinPressure { get; set; }
-
-    [JsonProperty("max_wind_speed")]
-    public string? MaxWindSpeed { get; set; }
-
-    [JsonProperty("min_wind_speed")]
-    public string? MinWindSpeed { get; set; }
-
-    [JsonProperty("wind_direction")]
-    public string? WindDirection { get; set; }
-
-    [JsonProperty("rain")]
-    public string? Rain { get; set; }
-
-    [JsonProperty("snow")]
-    public string? Snow { get; set; }
-
-    [JsonProperty("max_cloud")]
-    public string? MaxCloud { get; set; }
-
-    [JsonProperty("min_cloud")]
-    public string? MinCloud { get; set; }
+    [JsonProperty("rules")]
+    public WeatherParameters? Rules { get; set; }
 
     [JsonProperty("trigger_period")]
     public string? TriggerPeriod { get; set; }
@@ -68,20 +29,7 @@ internal class Rule
 
     public Rule()
     {
-        /*Rules = new WeatherParameters();*/
-        MaxTemp = "null";
-        MinTemp = "null";
-        MaxHumidity = "null";
-        MinHumidity = "null";
-        MaxPressure = "null";
-        MinPressure = "null";
-        MaxWindSpeed = "null";
-        MinWindSpeed = "null";
-        WindDirection = "null";
-        Rain = "null";
-        Snow = "null";
-        MaxCloud = "null";
-        MinCloud = "null";
+        Rules = new WeatherParameters();
         TriggerPeriod = string.Empty;
         List<string> Location = new();
         Id = string.Empty;
@@ -91,20 +39,7 @@ internal class Rule
         string minT, string maxH, string minH, string maxP, string minP, string maxWS, string minWS, string direction, string rain,
         string snow, string maxC, string minC)
     {
-        //Rules = new WeatherParameters(maxT, minT, maxH, minH, maxP, minP, maxWS, minWS, direction, rain, snow, maxC, minC);
-        MaxTemp = maxT;
-        MinTemp = minT;
-        MaxHumidity = maxH;
-        MinHumidity = minH;
-        MaxPressure = maxP;
-        MinPressure = minP;
-        MaxWindSpeed = maxWS;
-        MinWindSpeed = minWS;
-        WindDirection = direction;
-        Rain = rain;
-        Snow = snow;
-        MaxCloud = maxC;
-        MinCloud = minC;
+        Rules = new WeatherParameters(maxT, minT, maxH, minH, maxP, minP, maxWS, minWS, direction, rain, snow, maxC, minC);
         TriggerPeriod = triggerP;
         Location = new List<string> { locName, lat, lon, cCode, sCode };
         Id = id;
@@ -114,7 +49,8 @@ internal class Rule
     {
         // Get the folder where the tokes is stored.
         // string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
-        string appDataPath = @"C:\Users\Utente\Desktop\token.txt";
+        //string appDataPath = @"C:\Users\Utente\Desktop\token.txt";
+        string appDataPath = @"C:\Users\Acer\Desktop\token.txt";
         string token = File.ReadAllText(appDataPath);
         return token;
     }
@@ -122,35 +58,37 @@ internal class Rule
     private async Task DoRequest(string url)
     {
         string token = GetToken();
-        HttpClient httpC = new HttpClient();
-        httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        string jsonData = Utilities.JsonUtility.SerializeJSON(this);
-        HttpRequestMessage request = new HttpRequestMessage
+        using (HttpClient httpC = new HttpClient())
         {
-            Method = HttpMethod.Post,
-            RequestUri = new Uri(url),
-            Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
-        };
-        var prova = request.Content;
-        HttpResponseMessage response = httpC.Send(request);
-        if ((int)response.StatusCode == 401)
-        {
-            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
-        }
-        else if ((int)response.StatusCode != 200)
-        {
-            throw new ServerException("Failed to load rules due an internal server error.");
+            httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            string jsonData = Utilities.JsonUtility.SerializeJSON(this);
+            HttpRequestMessage request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(url),
+                Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
+            };
+            var prova = request.Content;
+            HttpResponseMessage response = httpC.Send(request);
+            if ((int)response.StatusCode == 401)
+            {
+                throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+            }
+            else if ((int)response.StatusCode != 200)
+            {
+                throw new ServerException("Failed to load rules due an internal server error.");
+            }
         }
     }
 
     public async void Save()
     {
-        await DoRequest(Utilities.Constants.urlUpdate);
+        await DoRequest(Constants.urlUpdate);
     }
 
     public async void Delete()
     {
-        await DoRequest(Utilities.Constants.urlDelete);
+        await DoRequest(Constants.urlDelete);
     }
 
     public static Rule Load(string id)

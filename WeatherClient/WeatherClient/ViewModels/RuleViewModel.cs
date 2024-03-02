@@ -292,12 +292,12 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         {
             if (value == true)
             {
-                _rule.Rules.Snow = "rain";
+                _rule.Rules.Rain = "rain";
                 OnPropertyChanged();
             }
             else
             {
-                _rule.Rules.Snow = "null";
+                _rule.Rules.Rain = "null";
                 OnPropertyChanged();
             }
         }
@@ -411,12 +411,20 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         try
         {
             _rule.Save();
-        } catch (TokenNotValidException exc)
+        }
+        catch (TokenNotValidException exc)
         {
-            /*creare pannello x andare alla login*/
-        } catch (ServerException exc)
+            var title = "Login Required!";
+            var message = "Your session is expired. You will be redirect to login page.";
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            await Shell.Current.GoToAsync(nameof(Views.LoginPage));
+        }
+        catch (ServerException exc)
         {
-            /* creare pannello per tornare alla home rules*/
+            var title = "Warning!";
+            var message = "An error occurred in server. It was not possible to save your rule.";
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            await Shell.Current.GoToAsync(nameof(Views.AllRulesPage));
         }
         await Shell.Current.GoToAsync($"..?saved={_rule.Id}");
     }
@@ -429,11 +437,17 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         catch (TokenNotValidException exc)
         {
-            /*creare pannello x andare alla login*/
+            var title = "Login Required!";
+            var message = "Your session is expired. You will be redirect to login page.";
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            await Shell.Current.GoToAsync(nameof(Views.LoginPage));
         }
         catch (ServerException exc)
         {
-            /* creare pannello per tornare alla home rules*/
+            var title = "Warning!";
+            var message = "An error occurred in server. It was not possible to delete your rule.";
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            await Shell.Current.GoToAsync(nameof(Views.AllRulesPage));
         }
         await Shell.Current.GoToAsync($"..?deleted={_rule.Id}");
     }

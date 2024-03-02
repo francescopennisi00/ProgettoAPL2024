@@ -8,87 +8,155 @@
         <viewModels:RuleViewModel />
     </ContentPage.BindingContext>
     <ScrollView>
+
         <VerticalStackLayout Spacing="10" Margin="5">
-            <Editor x:Name="LocationNameEditor"
-                    Placeholder="Enter the name of the location that you are interested in."
-                    Text="{Binding Location[0]}"
-                    HeightRequest="20" />
-            <Editor x:Name="CountryCodeEditor"
-                    Placeholder="Enter the country code of the location, such as USA or IT."
-                    Text="{Binding Location[3]}"
-                    HeightRequest="20" />
-            <Editor x:Name="StateCodeEditor"
-                    Placeholder="Enter the state code of the location, such as California or Sicily."
-                    Text="{Binding Location[4]}"
-                    HeightRequest="20" />
-            <Editor x:Name="LatitudeEditor"
-                    Placeholder="You can also enter the latitude of your location, if you know it. Otherwise we insert it for you."
-                    Text="{Binding Location[1]}"
-                    HeightRequest="20" />
-            <Editor x:Name="LongitudeEditor"
-                    Placeholder="You can also enter the longitude of your location, if you know it. Otherwise we insert it for you."
-                    Text="{Binding Location[2]}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MaxTempEditor"
-                    Placeholder="Enter the temperature (°C) beyond which you want to be notified."
-                    Text="{Binding MaxTemp}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MinTempEditor"
-                    Placeholder="Enter the temperature (°C) below which you want to be notified."
-                    Text="{Binding MinTemp}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MaxHumidityEditor"
-                    Placeholder="Enter the percentage of humidity beyond which you want to be notified."
-                    Text="{Binding MaxHumidity}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MinHumidityEditor"
-                    Placeholder="Enter the percentage of humidity below which you want to be notified."
-                    Text="{Binding MinHumidity}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MaxPressureEditor"
-                    Placeholder="Enter the pressure (hPa) beyond which you want to be notified."
-                    Text="{Binding MaxPressure}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MinPressureEditor"
-                    Placeholder="Enter the pressure (hPa) below which you want to be notified."
-                    Text="{Binding MinPressure}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MaxWindSpeedEditor"
-                    Placeholder="Enter the wind speed (km/h) beyond which you want to be notified."
-                    Text="{Binding MaxWindSpeed}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MinWindSpeedEditor"
-                    Placeholder="Enter the wind speed (km/h) below which you want to be notified."
-                    Text="{Binding MinWindSpeed}"
-                    HeightRequest="20"/>
-            <Editor x:Name="WindDirectionEditor"
-                    Placeholder="Enter the wind direction you are interested in (N,NE,E,SE,S,SW,W,NW). We will notify you if the wind is coming from that direction."
-                    Text="{Binding WindDirection}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MaxCloudTextEditor"
-                    Placeholder="Enter the percentage of cloud in the sky beyond which you want to be notified."
-                    Text="{Binding MaxCloud}"
-                    HeightRequest="20"/>
-            <Editor x:Name="MinCloudEditor"
-                    Placeholder="Enter the percentage of cloud in the sky below which you want to be notified."
-                    Text="{Binding MinCloud}"
-                    HeightRequest="20"/>
-            <Editor x:Name="TriggerPeriod"
-                    Placeholder="Enter the trigger period."
-                    Text="{Binding TriggerPeriod}"
-                    HeightRequest="20" />
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Location"></Label>
+                <Editor x:Name="LocationNameEditor"
+                   Placeholder="Enter the name of the location that you are interested in."
+                   Text="{Binding Location[0]}"
+                   HeightRequest="20" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Country"></Label>
+                <Editor x:Name="CountryCodeEditor"
+                   Placeholder="Enter the country code of the location, such as USA or IT."
+                   Text="{Binding Location[3]}"
+                   HeightRequest="20" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="State\Region"></Label>
+                <Editor x:Name="StateCodeEditor"
+                  Placeholder="Enter the state or region of the location, such as California or Sicily."
+                  Text="{Binding Location[4]}"
+                  HeightRequest="20" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Latitude(°)"></Label>
+                <Editor x:Name="LatitudeEditor"
+                   Placeholder="Enter the latitude of your location."
+                   Text="{Binding Location[1]}"
+                   HeightRequest="20" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Longitude(°)"></Label>
+                <Editor x:Name="LongitudeEditor"
+                   Placeholder="Enter the longitude of your location."
+                   Text="{Binding Location[2]}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Maximum temperature (°C)"></Label>
+                <Editor x:Name="MaxTempEditor"
+                   Placeholder="Enter the temperature (°C) beyond which you want to be notified."
+                   Text="{Binding MaxTemp}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Minimum temperature (°C)"></Label>
+                <Editor x:Name="MinTempEditor"
+                   Placeholder="Enter the temperature (°C) below which you want to be notified."
+                   Text="{Binding MinTemp}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Maximum humidity (%)"></Label>
+                <Editor x:Name="MaxHumidityEditor"
+                   Placeholder="Enter the percentage of humidity beyond which you want to be notified."
+                   Text="{Binding MaxHumidity}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Minimum humidity (%)"></Label>
+                <Editor x:Name="MinHumidityEditor"
+                   Placeholder="Enter the percentage of humidity below which you want to be notified."
+                   Text="{Binding MinHumidity}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Maximum pressure (hPa)"></Label>
+                <Editor x:Name="MaxPressureEditor"
+                   Placeholder="Enter the pressure (hPa) beyond which you want to be notified."
+                   Text="{Binding MaxPressure}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Minimum pressure (hPa)"></Label>
+                <Editor x:Name="MinPressureEditor"
+                   Placeholder="Enter the pressure (hPa) below which you want to be notified."
+                   Text="{Binding MinPressure}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Maximum wind speed (m/s)"></Label>
+                <Editor x:Name="MaxWindSpeedEditor"
+                   Placeholder="Enter the wind speed (m/s) beyond which you want to be notified."
+                   Text="{Binding MaxWindSpeed}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Minimum wind speed (m/s)"></Label>
+                <Editor x:Name="MinWindSpeedEditor"
+                   Placeholder="Enter the wind speed (m/s) below which you want to be notified."
+                   Text="{Binding MinWindSpeed}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Wind direction"></Label>
+                <Editor x:Name="WindDirectionEditor"
+                   Placeholder="Enter the wind direction you are interested in (N,NE,E,SE,S,SW,W,NW). We will notify you if the wind is coming from that direction."
+                   Text="{Binding WindDirection}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Maximum cloud in the sky (%)"></Label>
+                <Editor x:Name="MaxCloudTextEditor"
+                   Placeholder="Enter the percentage of cloud in the sky beyond which you want to be notified."
+                   Text="{Binding MaxCloud}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Minimum cloud in the sky (%)"></Label>
+                <Editor x:Name="MinCloudEditor"
+                   Placeholder="Enter the percentage of cloud in the sky below which you want to be notified."
+                   Text="{Binding MinCloud}"
+                   HeightRequest="20"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="1" Margin="1">
+                <Label Text="Your notification period"></Label>
+                <Editor x:Name="TriggerPeriod"
+                   Placeholder="Enter the number of hours between two consecutive notifications."
+                   Text="{Binding TriggerPeriod}"
+                   HeightRequest="20" />
+            </VerticalStackLayout>
+
             <StackLayout Orientation="Horizontal" Spacing="10">
                 <CheckBox IsChecked="{Binding Rain, Mode=TwoWay}" />
-                <Label Text="Check it if you're interested in being notified if it rains." VerticalOptions="Center" />
+                <Label Text="You're interested in being notified if it rains." VerticalOptions="Center" />
             </StackLayout>
             <StackLayout Orientation="Horizontal" Spacing="10">
                 <CheckBox IsChecked="{Binding Snow, Mode=TwoWay}" />
-                <Label Text="Check it if you're interested in being notified if it snows." VerticalOptions="Center" />
+                <Label Text="You're interested in being notified if it snows." VerticalOptions="Center" />
             </StackLayout>
             <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
                 <Button Text="Save"
                        Command="{Binding SaveCommand}"/>
-
                 <Button Grid.Column="1"
                         Text="Delete"
                         Command="{Binding DeleteCommand}"/>
