@@ -14,7 +14,7 @@
                 <Label Text="Location"></Label>
                 <Editor x:Name="LocationNameEditor"
                    Placeholder="Enter the name of the location that you are interested in."
-                   Text="{Binding Location[0]}"
+                   Text="{Binding LocationName}"
                    HeightRequest="20" />
             </VerticalStackLayout>
 
@@ -22,7 +22,7 @@
                 <Label Text="Country"></Label>
                 <Editor x:Name="CountryCodeEditor"
                    Placeholder="Enter the country code of the location, such as USA or IT."
-                   Text="{Binding Location[3]}"
+                   Text="{Binding LocationCountry}"
                    HeightRequest="20" />
             </VerticalStackLayout>
 
@@ -30,7 +30,7 @@
                 <Label Text="State\Region"></Label>
                 <Editor x:Name="StateCodeEditor"
                   Placeholder="Enter the state or region of the location, such as California or Sicily."
-                  Text="{Binding Location[4]}"
+                  Text="{Binding LocationState}"
                   HeightRequest="20" />
             </VerticalStackLayout>
 
@@ -38,7 +38,7 @@
                 <Label Text="Latitude(°)"></Label>
                 <Editor x:Name="LatitudeEditor"
                    Placeholder="Enter the latitude of your location."
-                   Text="{Binding Location[1]}"
+                   Text="{Binding LocationLatitude}"
                    HeightRequest="20" />
             </VerticalStackLayout>
 
@@ -46,7 +46,7 @@
                 <Label Text="Longitude(°)"></Label>
                 <Editor x:Name="LongitudeEditor"
                    Placeholder="Enter the longitude of your location."
-                   Text="{Binding Location[2]}"
+                   Text="{Binding LocationLongitude}"
                    HeightRequest="20"/>
             </VerticalStackLayout>
 

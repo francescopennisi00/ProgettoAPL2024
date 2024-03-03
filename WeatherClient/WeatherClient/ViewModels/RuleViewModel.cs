@@ -9,8 +9,112 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
 {
     private Models.Rule _rule;
 
-    public List<string>? Location => _rule.Location;
     public string? Id => _rule.Id;
+
+    public string? LocationName
+    {
+        get
+        {
+            if (_rule.Location == null)
+            {
+                return null;
+            }
+            return _rule.Location[0];
+        }
+        set
+        {
+            if (_rule.Location == null)
+            {
+                _rule.Location = new List<string>(new string[5]);
+            }
+            _rule.Location[0] = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? LocationCountry
+    {
+        get
+        {
+            if (_rule.Location == null)
+            {
+                return null;
+            }
+            return _rule.Location[3];
+        }
+        set
+        {
+            if (_rule.Location == null)
+            {
+                _rule.Location = new List<string>(new string[5]);
+            }
+            _rule.Location[3] = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? LocationState
+    {
+        get
+        {
+            if (_rule.Location == null)
+            {
+                return null;
+            }
+            return _rule.Location[4];
+        }
+        set
+        {
+            if (_rule.Location == null)
+            {
+                _rule.Location = new List<string>(new string[5]);
+            }
+            _rule.Location[4] = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? LocationLatitude
+    {
+        get
+        {
+            if (_rule.Location == null)
+            {
+                return null;
+            }
+            return _rule.Location[1];
+        }
+        set
+        {
+            if (_rule.Location == null)
+            {
+                _rule.Location = new List<string>(new string[5]);
+            }
+            _rule.Location[1] = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? LocationLongitude
+    {
+        get
+        {
+            if (_rule.Location == null)
+            {
+                return null;
+            }
+            return _rule.Location[2];
+        }
+        set
+        {
+            if (_rule.Location == null)
+            {
+                _rule.Location = new List<string>(new string[5]);
+            }
+            _rule.Location[2] = value;
+            OnPropertyChanged();
+        }
+    }
 
     public string? TriggerPeriod
     {
@@ -18,8 +122,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         set
         {
             _rule.TriggerPeriod = value;
-            OnPropertyChanged();
-            
+            OnPropertyChanged();         
         }
     }
 
