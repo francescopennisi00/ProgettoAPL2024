@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 using WeatherClient.Utilities;
 using WeatherClient.Exceptions;
+using System.Text.RegularExpressions;
 
 namespace WeatherClient.Models;
 
@@ -55,7 +56,7 @@ internal class Rule
         return token;
     }
 
-    private async Task DoRequest(string url)
+    private async Task<string> DoRequest(string url)
     {
         string token = GetToken();
         using (HttpClient httpC = new HttpClient())
@@ -78,12 +79,31 @@ internal class Rule
             {
                 throw new ServerException("Failed to load rules due an internal server error.");
             }
+            var stringReturned = await response.Content.ReadAsStringAsync();
+            // next instructions only if request is an update, not a delete and this update is an insert of a new rule
+            if (url == Constants.urlUpdate && Id == String.Empty)
+            {
+                // extracting id of the new rule inserted by regular expressions
+                Regex regex = new Regex(@"\d+");
+                Match match = regex.Match(stringReturned);
+                if (match.Success)
+                {
+                    return match.Value;
+                }
+                else
+                {
+                    throw new ServerException("Error: server has not returned id of the rule inserted.");
+                }
+            } else
+            {
+                return stringReturned;
+            }
         }
     }
 
-    public async void Save()
+    public async Task<string> Save()
     {
-        await DoRequest(Constants.urlUpdate);
+        return await DoRequest(Constants.urlUpdate);
     }
 
     public async void Delete()

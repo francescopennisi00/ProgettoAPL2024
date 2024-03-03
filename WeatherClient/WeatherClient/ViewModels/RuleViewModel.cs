@@ -9,7 +9,17 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
 {
     private Models.Rule _rule;
 
-    public string? Id => _rule.Id;
+    public string? Id
+    {
+        get
+        {
+            return _rule.Id;
+        }
+        private set
+        {
+            _rule.Id = value;
+        }
+    }
 
     public string? LocationName
     {
@@ -513,7 +523,14 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
     {
         try
         {
-            _rule.Save();
+            // In case of success, id contains either id of the rule created into server or the string returned by server
+            // we are interested only in id (so we use id string variable only id Id == null)
+            string id = await _rule.Save();
+            // if Id property is null, then saved rule is new and we have to assign to Id property its id
+            if (Id == String.Empty)
+            {
+                Id = id;
+            }
         }
         catch (TokenNotValidException exc)
         {

@@ -135,12 +135,17 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 	if er != nil {
 		if errors.Is(er, sql.ErrNoRows) {
 			query = fmt.Sprintf("INSERT INTO user_constraints (user_id, location_id, rules, time_stamp, trigger_period) VALUES(%d, %s, '%s', CURRENT_TIMESTAMP, %s)", idUser, locationId, jsonRulesString, triggerPeriod)
-			_, _, err = dbConn.ExecuteQuery(query)
+			res, _, err := dbConn.ExecuteQuery(query)
 			if err != nil {
 				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database insert: %v", err))
 				return
 			}
-			wmsUtils.SetResponseMessage(writer, http.StatusOK, "New user constraints correctly inserted!")
+			idRule, errorId := res.LastInsertId()
+			if errorId != nil {
+				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in retrieving id of last insert item into 'user_constraints' table: %v", errorId))
+				return
+			}
+			wmsUtils.SetResponseMessage(writer, http.StatusOK, fmt.Sprintf("New user constraints correctly inserted! Id of the new constraints: %d", idRule))
 			return
 		} else {
 			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in DB query select from 'user_constraints' table: %v", er))
