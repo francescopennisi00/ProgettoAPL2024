@@ -82,7 +82,7 @@ internal class SignupViewModel : INotifyPropertyChanged
             {
                 if (await _user.Login())
                 {
-                    //se il login ha successo setto le credenziali e visualizzo la tabbedpage
+                    await Shell.Current.GoToAsync($"..?registered={UserName}");
                     await Shell.Current.GoToAsync("//AllRulesRoute");
                 }
                 else

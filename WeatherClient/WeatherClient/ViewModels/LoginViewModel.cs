@@ -11,7 +11,7 @@ using WeatherClient.Models;
 using WeatherClient.Views;
 namespace WeatherClient.ViewModels;
 
-internal class LoginViewModel : ObservableObject
+internal class LoginViewModel : ObservableObject, IQueryAttributable
 {
     private Models.User _user;
     public bool IsVisibleLogin { get; private set; }
@@ -51,7 +51,22 @@ internal class LoginViewModel : ObservableObject
         Logout = new Command(LogoutClicked);
         DeleteAccount = new Command(DeleteAccountClicked);
     }
-
+    void IQueryAttributable.ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.ContainsKey("registered"))
+        {
+            IsVisibleLogin = false;
+            IsVisibleLogout = true;
+            OnPropertyChanged(nameof(IsVisibleLogin));
+            OnPropertyChanged(nameof(IsVisibleLogout));
+            var username = query["registered"].ToString();
+            if (!string.IsNullOrEmpty(username))
+            {
+                UserName = username;
+            }
+        }
+        
+    }
     private async void LogoutClicked()
     {
         try
@@ -63,6 +78,8 @@ internal class LoginViewModel : ObservableObject
             OnPropertyChanged(nameof(IsVisibleLogout));
             _user.Password = String.Empty;
             _user.UserName = String.Empty;
+            OnPropertyChanged(nameof(Password));
+            OnPropertyChanged(nameof(UserName));
         }
         catch (Exception exc)
         {
@@ -115,6 +132,8 @@ internal class LoginViewModel : ObservableObject
             OnPropertyChanged(nameof(IsVisibleLogout));
             _user.Password = String.Empty;
             _user.UserName = String.Empty;
+            OnPropertyChanged(nameof(Password));
+            OnPropertyChanged(nameof(UserName));
         }
         catch (Exception exc)
         {

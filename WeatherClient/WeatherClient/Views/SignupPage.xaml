@@ -19,11 +19,9 @@
             <Entry x:Name="Entry_Password" IsPassword="True" Placeholder="Password" Text="{Binding Password}" />
             <Entry x:Name="Entry_ConfirmPassword" IsPassword="True" Placeholder="Conferma password" Text="{Binding ConfirmPassword}" />
 
-            <Button x:Name="Button_Signup" Text="Registrati" IsEnabled="{Binding IsNotLoading}" Command="{Binding Signup}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5" BackgroundColor="Orange"/>
+            <Button x:Name="Button_Signup" Text="Registrati" IsEnabled="{Binding IsNotLoading}" Command="{Binding Signup}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
 
         </VerticalStackLayout>
-
-        <ActivityIndicator x:Name="ActivitySpinner" Color="Red" IsRunning="True" IsVisible="{Binding IsLoading}" VerticalOptions="Center" HorizontalOptions="Center"/>
 
     </Grid>
 </ContentPage>
