@@ -8,7 +8,8 @@ namespace WeatherClient.ViewModels;
 internal class RuleViewModel : ObservableObject, IQueryAttributable
 {
     private Models.Rule _rule;
-
+    public bool IsEditableLocation { get; private set; }
+    public bool IsNotEditableLocation { get; private set; }
     public string? Id
     {
         get
@@ -508,6 +509,10 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
     public RuleViewModel()
     {
         _rule = new Models.Rule();
+        IsEditableLocation = false;
+        IsNotEditableLocation = true;
+        OnPropertyChanged(nameof(IsEditableLocation));
+        OnPropertyChanged(nameof(IsNotEditableLocation));
         SaveCommand = new AsyncRelayCommand(Save);
         DeleteCommand = new AsyncRelayCommand(Delete);
     }
@@ -578,6 +583,13 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         {
             _rule = Models.Rule.Load(query["load"].ToString());
             RefreshProperties();
+        }
+        if (query.ContainsKey("add"))
+        {
+            IsEditableLocation = true;
+            IsNotEditableLocation = false;
+            OnPropertyChanged(nameof(IsEditableLocation));
+            OnPropertyChanged(nameof(IsNotEditableLocation));
         }
     }
 

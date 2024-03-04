@@ -14,7 +14,10 @@
                 <Label Text="Location"></Label>
                 <Editor x:Name="LocationNameEditor"
                    Placeholder="Enter the name of the location that you are interested in."
-                   Text="{Binding LocationName}"
+                   Text="{Binding LocationName}" IsVisible="{Binding IsEditableLocation}"
+                   HeightRequest="20" />
+                <Label x:Name="LocationNameLabel"
+                   Text="{Binding LocationName}" IsVisible="{Binding IsNotEditableLocation}"
                    HeightRequest="20" />
             </VerticalStackLayout>
 
@@ -22,7 +25,10 @@
                 <Label Text="Country"></Label>
                 <Editor x:Name="CountryCodeEditor"
                    Placeholder="Enter the country code of the location, such as USA or IT."
-                   Text="{Binding LocationCountry}"
+                   Text="{Binding LocationCountry}" IsVisible="{Binding IsEditableLocation}"
+                   HeightRequest="20" />
+                <Label x:Name="CountryCodeLabel"
+                   Text="{Binding LocationCountry}" IsVisible="{Binding IsNotEditableLocation}"
                    HeightRequest="20" />
             </VerticalStackLayout>
 
@@ -30,7 +36,10 @@
                 <Label Text="State\Region"></Label>
                 <Editor x:Name="StateCodeEditor"
                   Placeholder="Enter the state or region of the location, such as California or Sicily."
-                  Text="{Binding LocationState}"
+                  Text="{Binding LocationState}" IsVisible="{Binding IsEditableLocation}"
+                  HeightRequest="20" />
+                <Label x:Name="StateCodeLabel"
+                  Text="{Binding LocationState}" IsVisible="{Binding IsNotEditableLocation}"
                   HeightRequest="20" />
             </VerticalStackLayout>
 
@@ -38,7 +47,10 @@
                 <Label Text="Latitude(°)"></Label>
                 <Editor x:Name="LatitudeEditor"
                    Placeholder="Enter the latitude of your location."
-                   Text="{Binding LocationLatitude}"
+                   Text="{Binding LocationLatitude}" IsVisible="{Binding IsEditableLocation}"
+                   HeightRequest="20" />
+                <Label x:Name="LatitudeLabel"
+                   Text="{Binding LocationLatitude}" IsVisible="{Binding IsNotEditableLocation}"
                    HeightRequest="20" />
             </VerticalStackLayout>
 
@@ -46,7 +58,10 @@
                 <Label Text="Longitude(°)"></Label>
                 <Editor x:Name="LongitudeEditor"
                    Placeholder="Enter the longitude of your location."
-                   Text="{Binding LocationLongitude}"
+                   Text="{Binding LocationLongitude}" IsVisible="{Binding IsEditableLocation}"
+                   HeightRequest="20"/>
+                <Label x:Name="LongitudeLabel"
+                   Text="{Binding LocationLongitude}" IsVisible="{Binding IsNotEditableLocation}"
                    HeightRequest="20"/>
             </VerticalStackLayout>
 

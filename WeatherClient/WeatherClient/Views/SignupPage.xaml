@@ -10,7 +10,7 @@
     </ContentPage.BindingContext>
 
     <Grid Margin="20">
-        <Image x:Name="imageBackground" Aspect="AspectFill" HorizontalOptions="Fill" VerticalOptions="Fill" Opacity="0.5" />
+        <Image Source="weather_icon.png" Aspect="AspectFit" HorizontalOptions="Fill" VerticalOptions="Start" Opacity="1" HeightRequest="150" />
 
         <VerticalStackLayout VerticalOptions="Center">
 

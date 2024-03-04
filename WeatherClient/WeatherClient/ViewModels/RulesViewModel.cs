@@ -3,11 +3,14 @@ using WeatherClient.Models;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using WeatherClient.Exceptions;
+using WeatherClient.Views;
 
 namespace WeatherClient.ViewModels;
 
 internal class RulesViewModel : IQueryAttributable
 {
+    private Rule rule;
+
     public ObservableCollection<RuleViewModel> AllRules { get; }
     public ICommand NewCommand { get; }
     public ICommand SelectNoteCommand { get; }
@@ -32,7 +35,7 @@ internal class RulesViewModel : IQueryAttributable
         catch (AggregateException)
         {
             var title = "Warning!";
-            var message = "Ofancul!";
+            var message = "You need to be authenticate!";
             Application.Current.MainPage.DisplayAlert(title, message, "OK");
             Shell.Current.GoToAsync("//LoginRoute");
         }
@@ -40,9 +43,14 @@ internal class RulesViewModel : IQueryAttributable
         SelectNoteCommand = new AsyncRelayCommand<RuleViewModel>(SelectRuleAsync);
     }
 
+    public RulesViewModel(Rule rule)
+    {
+        this.rule = rule;
+    }
+
     private async Task NewRuleAsync()
     {
-        await Shell.Current.GoToAsync(nameof(Views.RulesPage));
+        await Shell.Current.GoToAsync($"{nameof(Views.RulesPage)}?add={true}");
     }
 
     private async Task SelectRuleAsync(RuleViewModel rule)
