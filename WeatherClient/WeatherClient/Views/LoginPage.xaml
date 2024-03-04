@@ -30,8 +30,6 @@
 
                 <Label IsVisible="{Binding IsVisibleLogout}" Text="{Binding UserName}"/>
 
-                <Label IsVisible="{Binding IsVisibleLogout}" Text="{Binding Password}" />
-
                 <Button Text="Accedi" IsVisible="{Binding IsVisibleLogin}" Command="{Binding Login}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
 
                 <Button Text="Registrati" IsVisible="{Binding IsVisibleLogin}" Command="{Binding Signup}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
@@ -44,7 +42,6 @@
             </VerticalStackLayout>
         </VerticalStackLayout>
 
-        <ActivityIndicator x:Name="ActivitySpinner" Color="Red" IsRunning="True" IsVisible="{Binding IsLoading}" VerticalOptions="Center" HorizontalOptions="Center"/>
-
+       
     </Grid>
 </ContentPage>

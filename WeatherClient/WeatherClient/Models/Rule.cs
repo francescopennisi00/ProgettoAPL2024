@@ -52,7 +52,8 @@ internal class Rule
         // Get the folder where the tokes is stored.
         string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
         string token = File.ReadAllText(appDataPath);
-        return token;
+        string token_to_return = token.Replace("\n", "").Replace("\r", "");
+        return token_to_return;
     }
 
     private async Task<string> DoRequest(string url)
