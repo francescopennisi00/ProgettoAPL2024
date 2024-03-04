@@ -2,10 +2,10 @@
 {
     internal class TokenNotValidException : Exception
     {
-        private string message;
+        public string Errormessage { get; private set; }
         public TokenNotValidException(string message)
         {
-            this.message = message;
+            this.Errormessage = message;
         }
     }
 }

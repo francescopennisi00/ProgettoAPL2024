@@ -2,8 +2,11 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="WeatherClient.Views.LoginPage"
-             xmlns:viewModels="clr-namespace:WeatherClient.Views.ViewModels"
+             xmlns:viewModels="clr-namespace:WeatherClient.ViewModels"
              Title="Login">
+    <ContentPage.BindingContext>
+        <viewModels:LoginViewModel />
+    </ContentPage.BindingContext>
 
     <Grid>
         <Image Source="dotnet_bot.png" Aspect="AspectFill" HorizontalOptions="Fill" VerticalOptions="Fill" Opacity="0.5" />
@@ -21,13 +24,22 @@
 
             <VerticalStackLayout x:Name="DatiStack" VerticalOptions="CenterAndExpand" Margin="40,0,40,0">
 
-                <Entry Placeholder="Username" Text="{Binding Username}"/>
+                <Entry Placeholder="Username" IsVisible="{Binding IsVisibleLogin}" Text="{Binding UserName}"/>
 
-                <Entry IsPassword="True" Placeholder="Password" Text="{Binding Password}" />
+                <Entry IsPassword="True" Placeholder="Password" IsVisible="{Binding IsVisibleLogin}" Text="{Binding Password}" />
 
-                <Button Text="Accedi" IsEnabled="{Binding IsNotLoading}" Command="{Binding Login}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5" BackgroundColor="Orange"/>
+                <Label IsVisible="{Binding IsVisibleLogout}" Text="{Binding UserName}"/>
 
-                <Button Text="Registrati" IsEnabled="{Binding IsNotLoading}" Command="{Binding Signup}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5" BackgroundColor="Orange"/>
+                <Label IsVisible="{Binding IsVisibleLogout}" Text="{Binding Password}" />
+
+                <Button Text="Accedi" IsVisible="{Binding IsVisibleLogin}" Command="{Binding Login}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
+
+                <Button Text="Registrati" IsVisible="{Binding IsVisibleLogin}" Command="{Binding Signup}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
+
+                <Button Text="Logout" IsVisible="{Binding IsVisibleLogout}" Command="{Binding Logout}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
+
+                <Button Text="Delete" IsVisible="{Binding IsVisibleLogout}" Command="{Binding DeleteAccount}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
+
 
             </VerticalStackLayout>
         </VerticalStackLayout>

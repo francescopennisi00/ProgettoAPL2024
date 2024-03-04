@@ -2,6 +2,7 @@
 using WeatherClient.Models;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using WeatherClient.Exceptions;
 
 namespace WeatherClient.ViewModels;
 
@@ -12,7 +13,29 @@ internal class RulesViewModel : IQueryAttributable
     public ICommand SelectNoteCommand { get; }
     public RulesViewModel()
     {
-        AllRules = new ObservableCollection<RuleViewModel>(Rule.LoadAll().Select(n => new RuleViewModel(n)));
+        try
+        {
+            AllRules = new ObservableCollection<RuleViewModel>(Rule.LoadAll().Result.Select(n => new RuleViewModel(n)));
+        }
+        catch (TokenNotValidException exc)
+        {
+            var title = "Error!";
+            var message = exc.Errormessage;
+            Application.Current.MainPage.DisplayAlert(title, message, "OK");
+        }
+        catch (ServerException exc)
+        {
+            var title = "Warning!";
+            var message = exc.Errormessage;
+            Application.Current.MainPage.DisplayAlert(title, message, "OK");
+        }
+        catch (AggregateException)
+        {
+            var title = "Warning!";
+            var message = "Ofancul!";
+            Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            Shell.Current.GoToAsync("//LoginRoute");
+        }
         NewCommand = new AsyncRelayCommand(NewRuleAsync);
         SelectNoteCommand = new AsyncRelayCommand<RuleViewModel>(SelectRuleAsync);
     }

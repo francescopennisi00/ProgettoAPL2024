@@ -2,10 +2,10 @@
 {
     internal class ServerException : Exception
     {
-        private string message;
+        public string Errormessage { get; private set; }
         public ServerException(string message)
         {
-            this.message = message;
+            this.Errormessage = message;
         }
     }
 }

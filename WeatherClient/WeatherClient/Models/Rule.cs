@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using WeatherClient.Utilities;
 using WeatherClient.Exceptions;
 using System.Text.RegularExpressions;
+using System.Runtime.ExceptionServices;
 
 namespace WeatherClient.Models;
 
@@ -49,9 +50,7 @@ internal class Rule
     private static string GetToken()
     {
         // Get the folder where the tokes is stored.
-        // string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
-        //string appDataPath = @"C:\Users\Utente\Desktop\token.txt";
-        string appDataPath = @"C:\Users\Acer\Desktop\token.txt";
+        string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
         string token = File.ReadAllText(appDataPath);
         return token;
     }
@@ -113,7 +112,7 @@ internal class Rule
 
     public static Rule Load(string id)
     {
-        IEnumerable<Rule> rules = LoadAll();
+        IEnumerable<Rule> rules = LoadAll().Result;
         foreach (Rule rule in rules)
         {
             if (rule.Id == id)
@@ -167,15 +166,25 @@ internal class Rule
         }
     }
 
-    public static IEnumerable<Rule> LoadAll()
+    public static async Task<IEnumerable<Rule>> LoadAll()
     {
-        Task <IEnumerable<Rule>> task = LoadAllAsync();
-        IEnumerable<Rule> rules = task.Result;
-        if( rules == null)
+        try
         {
-            return new List<Rule>();
+            IEnumerable<Rule> rules = await LoadAllAsync();
+            if (rules == null)
+            {
+                return new List<Rule>();
+            }
+            return rules;
         }
-        return rules;
+        catch(TokenNotValidException)
+        {
+            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+        }
+        catch(ServerException)
+        {
+            throw new ServerException("Failed to load rules due an internal server error.");
+        }
     }
     /*
     private async Task<HttpResponseMessage> DoRequest(HttpMethod httpreq, string url, string json)
