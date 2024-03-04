@@ -11,7 +11,7 @@
 
         <VerticalStackLayout Spacing="10" Margin="5">
             <VerticalStackLayout Spacing="1" Margin="1">
-                <Label Text="Location"></Label>
+                <Label Text="Location   (Required)"></Label>
                 <Editor x:Name="LocationNameEditor"
                    Placeholder="Enter the name of the location that you are interested in."
                    Text="{Binding LocationName}" IsVisible="{Binding IsEditableLocation}"
@@ -44,7 +44,7 @@
             </VerticalStackLayout>
 
             <VerticalStackLayout Spacing="1" Margin="1">
-                <Label Text="Latitude(°)"></Label>
+                <Label Text="Latitude(°)    (Required)"></Label>
                 <Editor x:Name="LatitudeEditor"
                    Placeholder="Enter the latitude of your location."
                    Text="{Binding LocationLatitude}" IsVisible="{Binding IsEditableLocation}"
@@ -55,7 +55,7 @@
             </VerticalStackLayout>
 
             <VerticalStackLayout Spacing="1" Margin="1">
-                <Label Text="Longitude(°)"></Label>
+                <Label Text="Longitude(°)   (Required)"></Label>
                 <Editor x:Name="LongitudeEditor"
                    Placeholder="Enter the longitude of your location."
                    Text="{Binding LocationLongitude}" IsVisible="{Binding IsEditableLocation}"
@@ -154,7 +154,7 @@
             </VerticalStackLayout>
 
             <VerticalStackLayout Spacing="1" Margin="1">
-                <Label Text="Your notification period"></Label>
+                <Label Text="Your notification period   (Required)"></Label>
                 <Editor x:Name="TriggerPeriod"
                    Placeholder="Enter the number of hours between two consecutive notifications."
                    Text="{Binding TriggerPeriod}"

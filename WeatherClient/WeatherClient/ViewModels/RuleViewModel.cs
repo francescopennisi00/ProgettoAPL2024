@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Input;
 using WeatherClient.Exceptions;
+using System.Xml.Linq;
 
 namespace WeatherClient.ViewModels;
 
@@ -530,6 +531,13 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         {
             // In case of success, id contains either id of the rule created into server or the string returned by server
             // we are interested only in id (so we use id string variable only id Id == null)
+            if(TriggerPeriod.Length == 0 || LocationLatitude.Length == 0 || LocationLongitude.Length == 0 || LocationName.Length == 0)
+            {
+                var title = "Error";
+                var message = "You have to insert all required field";
+                await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+                return;
+            }
             string id = await _rule.Save();
             // if Id property is null, then saved rule is new and we have to assign to Id property its id
             if (Id == String.Empty)
