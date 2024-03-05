@@ -153,7 +153,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MaxTemp = value;
                 OnPropertyChanged();
@@ -181,7 +181,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MinTemp = value;
                 OnPropertyChanged();
@@ -209,7 +209,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MaxHumidity = value;
                 OnPropertyChanged();
@@ -237,7 +237,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MinHumidity = value;
                 OnPropertyChanged();
@@ -265,7 +265,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MaxPressure = value;
                 OnPropertyChanged();
@@ -293,7 +293,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MinPressure = value;
                 OnPropertyChanged();
@@ -321,7 +321,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MaxWindSpeed = value;
                 OnPropertyChanged();
@@ -349,7 +349,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MinWindSpeed = value;
                 OnPropertyChanged();
@@ -377,7 +377,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.WindDirection = value;
                 OnPropertyChanged();
@@ -463,7 +463,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MaxCloud = value;
                 OnPropertyChanged();
@@ -491,7 +491,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         }
         set
         {
-            if (value != null)
+            if (value != null && value != "")
             {
                 _rule.Rules.MinCloud = value;
                 OnPropertyChanged();

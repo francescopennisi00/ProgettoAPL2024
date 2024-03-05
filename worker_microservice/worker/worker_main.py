@@ -59,23 +59,33 @@ def check_rules(api_response, db_connect):
     if rules_list:
         event_dict = dict()
         check_functions_keys = check_functions.keys()
-        for rules in rules_list:
+        at_least_one_notification = False  # if no user is interested in any constraint, this remains False
+        for rules in rules_list:  # every rules entry is referred to one different user
             user_violated_rules_list = list()
             rules_json = json.loads(rules[0])
             keys_set_target = set(rules_json.keys())
+            one_rule_different_from_null = False  # if this variable remains False, user isn't interested in any rule
             for key in keys_set_target:
                 temp_dict = dict()
-                if rules_json.get(key) != "null":
-                    for prefix in check_functions_keys:
-                        if prefix in key:
-                            check_functions[prefix](key, api_response.get(key), rules_json.get(key), temp_dict)
-                            break
-                user_violated_rules_list.append(temp_dict)
-            event_dict[rules_json.get("user_id")] = user_violated_rules_list
+                if key != "user_id" and key != "location":
+                    if rules_json.get(key) != "null":
+                        one_rule_different_from_null = True
+                        for prefix in check_functions_keys:
+                            if prefix in key:
+                                check_functions[prefix](key, api_response.get(key), rules_json.get(key), temp_dict)
+                                user_violated_rules_list.append(temp_dict)
+                                break
+            # we insert entry for the user only if he is interested in at least one constraint
+            if one_rule_different_from_null:
+                event_dict[rules_json.get("user_id")] = user_violated_rules_list
+                at_least_one_notification = True  # since this is set to True, Worker will publish message to Notifier
         json_location = rules_list[0][0]  # all entries in rules_list have the same location
         dict_location = json.loads(json_location)
         event_dict['location'] = dict_location.get('location')
-        return json.dumps(event_dict)
+        if at_least_one_notification:
+            return json.dumps(event_dict)  # we return message to send to Notifier
+        else:
+            return "{}"  # we return this in order to avoid message sending to Notifier
 
 
 # function for recovering unchecked rules when worker goes down before publishing notification event
@@ -102,6 +112,7 @@ def find_current_work():
         return result
     else:
         events_to_be_sent = "{}"
+    # if no user is interested in any constraint, events_to_be_sent is "{}" because in this case check_rules return "{}"
     return events_to_be_sent
 
 
