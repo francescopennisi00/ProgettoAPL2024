@@ -10,16 +10,15 @@
     </ContentPage.BindingContext>
 
     <Grid Margin="20">
-        <Image Source="weather_icon.png" Aspect="AspectFit" HorizontalOptions="Fill" VerticalOptions="Start" Opacity="1" HeightRequest="150" />
 
         <VerticalStackLayout VerticalOptions="Center">
 
             <Entry x:Name="Entry_Username" Placeholder="Username" Text="{Binding UserName}"/>
 
             <Entry x:Name="Entry_Password" IsPassword="True" Placeholder="Password" Text="{Binding Password}" />
-            <Entry x:Name="Entry_ConfirmPassword" IsPassword="True" Placeholder="Conferma password" Text="{Binding ConfirmPassword}" />
+            <Entry x:Name="Entry_ConfirmPassword" IsPassword="True" Placeholder="Confirm password" Text="{Binding ConfirmPassword}" />
 
-            <Button x:Name="Button_Signup" Text="Registrati" IsEnabled="{Binding IsNotLoading}" Command="{Binding Signup}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
+            <Button x:Name="Button_Signup" Text="Sign up!" Command="{Binding Signup}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
 
         </VerticalStackLayout>
 

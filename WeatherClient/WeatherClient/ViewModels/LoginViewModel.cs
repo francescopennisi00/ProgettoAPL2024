@@ -1,10 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using WeatherClient.Exceptions;
 using WeatherClient.Models;
@@ -13,13 +7,16 @@ namespace WeatherClient.ViewModels;
 
 internal class LoginViewModel : ObservableObject, IQueryAttributable
 {
-    private Models.User _user;
+    private User _user;
+
     public bool IsVisibleLogin { get; private set; }
     public bool IsVisibleLogout { get; private set; }
+
     public string UserName
     {
         get => _user.UserName;
-        set{
+        set
+        {
             _user.UserName = value;
             OnPropertyChanged(nameof(UserName));
         }
@@ -34,39 +31,58 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
     public ICommand Signup { get; set; }
     public ICommand Logout { get; set; }
     public ICommand DeleteAccount { get; set; }
+
     public LoginViewModel()
     {
-        _user = new Models.User();
+        _user = new User();
         IsVisibleLogin = true;
         IsVisibleLogout = false;
         Login = new Command(LoginClicked);
-
-        Signup = new Command(async () =>
-        {
-            SignupPage page = new SignupPage();
-            if (!string.IsNullOrEmpty(UserName)) //se l'utente ha già inserito l'username nel login lo facilito nel signup inserendolo in automatico nella nuova pagina
-                page.BindingContext = new SignupViewModel(UserName);
-            await App.Current.MainPage.Navigation.PushAsync(page);
-        });
+        Signup = new Command(SignupClicked);
         Logout = new Command(LogoutClicked);
         DeleteAccount = new Command(DeleteAccountClicked);
     }
-    void IQueryAttributable.ApplyQueryAttributes(IDictionary<string, object> query)
+
+    private async void LoginClicked()
     {
-        if (query.ContainsKey("registered"))
+        try
         {
+            await _user.Login();
             IsVisibleLogin = false;
             IsVisibleLogout = true;
             OnPropertyChanged(nameof(IsVisibleLogin));
             OnPropertyChanged(nameof(IsVisibleLogout));
-            var username = query["registered"].ToString();
-            if (!string.IsNullOrEmpty(username))
-            {
-                UserName = username;
-            }
+            // if login was successfull we set credentials and go to Your Rules page
+            await Shell.Current.GoToAsync("//AllRulesRoute");
         }
-        
+        catch (UsernamePswWrongException exc)
+        {
+            var title = "Error!";
+            var message = exc.Errormessage;
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+        }
+        catch (BadRequestException exc)
+        {
+            var title = "Warning!";
+            var message = exc.Errormessage;
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+        }
+        catch (ServerException exc)
+        {
+            var title = "Warning!";
+            var message = exc.Errormessage;
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+        }
     }
+
+    private async void SignupClicked()
+    {
+        SignupPage page = new SignupPage();
+        if (!string.IsNullOrEmpty(UserName)) // if the user has already entered the username during login, we facilitate the signup process by automatically inserting it into the new page
+            page.BindingContext = new SignupViewModel(UserName);
+        await App.Current.MainPage.Navigation.PushAsync(page);
+    }
+
     private async void LogoutClicked()
     {
         try
@@ -88,39 +104,7 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
         }
     }
-
-    private async void LoginClicked()
-    {
-        try
-        {
-            if (await _user.Login())
-            {
-                IsVisibleLogin = false;
-                IsVisibleLogout = true;
-                OnPropertyChanged(nameof(IsVisibleLogin));
-                OnPropertyChanged(nameof(IsVisibleLogout));
-                //se il login ha successo setto le credenziali e visualizzo la tabbedpage
-                await Shell.Current.GoToAsync("//AllRulesRoute");
-            }
-            else
-            {
-                await App.Current.MainPage.DisplayAlert("Error", "Username or password wrong. Retry!", "Ok");
-            }
-        }
-        catch (UsernamePswWrongException exc)
-        {
-            var title = "Error!";
-            var message = exc.Errormessage;
-            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-        }
-        catch (ServerException exc)
-        {
-            var title = "Warning!";
-            var message = exc.Errormessage;
-            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-        }
-
-    }
+ 
     private async void DeleteAccountClicked()
     {
         try
@@ -141,6 +125,21 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
             var message = exc.Message;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
         }
+    }
 
+    void IQueryAttributable.ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.ContainsKey("registered"))
+        {
+            IsVisibleLogin = false;
+            IsVisibleLogout = true;
+            OnPropertyChanged(nameof(IsVisibleLogin));
+            OnPropertyChanged(nameof(IsVisibleLogout));
+            var username = query["registered"].ToString();
+            if (!string.IsNullOrEmpty(username))
+            {
+                UserName = username;
+            }
+        }
     }
 }

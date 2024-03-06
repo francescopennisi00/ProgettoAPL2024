@@ -5,7 +5,7 @@
         public string Errormessage { get; private set; }
         public TokenNotValidException(string message)
         {
-            this.Errormessage = message;
+            Errormessage = message;
         }
     }
 }

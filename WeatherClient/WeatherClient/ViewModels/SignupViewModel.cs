@@ -1,45 +1,25 @@
-﻿using System.ComponentModel;
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using WeatherClient.Exceptions;
 
 namespace WeatherClient.ViewModels;
 
-internal class SignupViewModel : INotifyPropertyChanged
+internal class SignupViewModel
 {
-    private bool isLoading;
+
     private Models.User _user;
 
-    public string UserName
+    public string? UserName
     {
         get => _user.UserName;
         set => _user.UserName = value;
     }
-    public string Password
+    public string? Password
     {
         get => _user.Password;
         set => _user.Password = value;
     }
+    public string? ConfirmPassword { get; set; }
 
-
-    //proprietà per indicare che la finestra sta caricando
-    public bool IsLoading
-    {
-        get => isLoading;
-        set
-        {
-            isLoading = value;
-            NotifyPropertyChanged(nameof(IsLoading));
-            NotifyPropertyChanged(nameof(IsNotLoading));
-        }
-    }
-
-    public bool IsNotLoading
-    {
-        get => !isLoading;
-    }
-
-
-    public string ConfirmPassword { get; set; }
     public ICommand Signup { get; set; }
 
     public SignupViewModel(string username) : this()
@@ -53,47 +33,36 @@ internal class SignupViewModel : INotifyPropertyChanged
         Signup = new Command(SignupClicked);
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
-
-    //metodo per notificare gli observer che osservano l'evento PropertyChanged
-    private void NotifyPropertyChanged(string propertyName)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
     private async void SignupClicked()
     {
-        //controlli di correttezza dei dati
+        // data validation checks
         if (string.IsNullOrEmpty(UserName) || string.IsNullOrEmpty(Password))
         {
-            await App.Current.MainPage.DisplayAlert("Attenzione!", "Riempire i campi username e password", "Ok");
+            await App.Current.MainPage.DisplayAlert("Warning", "Fill in the username and password fields.", "OK");
             return;
         }
         if (ConfirmPassword != Password)
         {
-            await App.Current.MainPage.DisplayAlert("Attenzione!", "Il campo password e conferma password devonon coincidere", "Ok");
+            await App.Current.MainPage.DisplayAlert("Warning!", "The password and confirm password fields must match.", "OK");
             return;
         }
 
-        IsLoading = true;
         try
         {
-            if (await _user.SignUp())
-            {
-                if (await _user.Login())
-                {
-                    await Shell.Current.GoToAsync($"..?registered={UserName}");
-                    await Shell.Current.GoToAsync("//AllRulesRoute");
-                }
-                else
-                    await App.Current.MainPage.DisplayAlert("Error", "Username or password wrong. Retry!", "Ok");
-            }
-            else
-                await App.Current.MainPage.DisplayAlert("Error", "Email already in use. Try to sign in!", "Ok");
+            _user.SignUp();
+            await _user.Login();
+            await Shell.Current.GoToAsync($"..?registered={UserName}");
+            await Shell.Current.GoToAsync("//AllRulesRoute");
         }
         catch (EmailAlreadyInUseException exc)
         {
             var title = "Error!";
+            var message = exc.Errormessage;
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+        }
+        catch (BadRequestException exc)
+        { 
+            var title = "Warning!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
         }
@@ -103,8 +72,6 @@ internal class SignupViewModel : INotifyPropertyChanged
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
         }
-        IsLoading = false;
     }
-
 
 }

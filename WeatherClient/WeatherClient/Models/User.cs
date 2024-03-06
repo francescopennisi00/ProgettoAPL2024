@@ -1,9 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using WeatherClient.Exceptions;
 
 namespace WeatherClient.Models;
@@ -11,9 +7,9 @@ namespace WeatherClient.Models;
 internal class User
 {
     [JsonProperty("email")]
-    public string UserName { get; set; }
+    public string? UserName { get; set; }
     [JsonProperty("password")]
-    public string Password { get; set; }
+    public string? Password { get; set; }
 
     public User(string userName, string password)
     {
@@ -25,31 +21,15 @@ internal class User
     {
     }
 
-    public async Task<bool> SignUp()
+    private static string ExtractToken(string response)
     {
-        using (HttpClient httpC = new HttpClient())
-        {
-            string jsonData = Utilities.JsonUtility.SerializeJSON(this);
-            HttpRequestMessage request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(Utilities.Constants.urlSignup),
-                Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
-            };
-            HttpResponseMessage response = httpC.Send(request);
-            if ((int)response.StatusCode == 401)
-            {
-                throw new EmailAlreadyInUseException("Email already in use. Try to sign in!");
-            }
-            else if ((int)response.StatusCode != 200)
-            {
-                throw new ServerException("Failed to signup due an internal server error.");
-            }
-            return true;
-        }
+
+        int colonIndex = response.IndexOf(':');
+        string token = response.Substring(colonIndex + 2);
+        return token;
     }
 
-    public async Task<bool> Login()
+    public async Task Login()
     {
         using (HttpClient httpC = new HttpClient())
         {
@@ -65,43 +45,58 @@ internal class User
             {
                 throw new UsernamePswWrongException("Username or password wrong. Retry!");
             }
+            if ((int)response.StatusCode == 400)
+            {
+                throw new BadRequestException("Bad request! Please enter again.");
+            }
             else if ((int)response.StatusCode != 200)
             {
                 throw new ServerException("Failed to login due an internal server error.");
             }
             string responseString = await response.Content.ReadAsStringAsync();
             var token = ExtractToken(responseString);
-            try
-            {
-                File.WriteAllText(Utilities.Constants.tokenPath, token);
-            }
-            catch (Exception exc){
-                Console.WriteLine(exc.Message);
-            }
-            return true;
+            File.WriteAllText(Utilities.Constants.tokenPath, token);
         }
     }
-    private static string ExtractToken(string response)
+
+    public void SignUp()
     {
-       
-        int colonIndex = response.IndexOf(':');
-        string token = response.Substring(colonIndex + 2);
-        return token;
-        
-        
-       
+        using (HttpClient httpC = new HttpClient())
+        {
+            string jsonData = Utilities.JsonUtility.SerializeJSON(this);
+            HttpRequestMessage request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(Utilities.Constants.urlSignup),
+                Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
+            };
+            HttpResponseMessage response = httpC.Send(request);
+            if ((int)response.StatusCode == 401)
+            {
+                throw new EmailAlreadyInUseException("Email already in use. Try to sign in!");
+            }
+            if ((int)response.StatusCode == 400)
+            {
+                throw new BadRequestException("Bad request! Please enter again.");
+            }
+            else if ((int)response.StatusCode != 200)
+            {
+                throw new ServerException("Failed to signup due an internal server error.");
+            }
+        }
     }
+
     public void Logout()
     {
 
         if (File.Exists(Utilities.Constants.tokenPath))
         {
-            // Elimina il file
+            // delete JWT Token file
             File.Delete(Utilities.Constants.tokenPath);
         }
         else
         {
-            throw new FileNotFoundException("File not found");
+            throw new FileNotFoundException("JWT Token file not found.");
         }
         
     }
@@ -122,17 +117,21 @@ internal class User
             {
                 throw new UsernamePswWrongException("Username or password wrong. Retry!");
             }
+            if ((int)response.StatusCode == 400)
+            {
+                throw new BadRequestException("Bad request! Please enter again.");
+            }
             else if ((int)response.StatusCode != 200)
             {
                 throw new ServerException("Failed to delete account due an internal server error.");
             }
             try
             {
-                this.Logout();
+                Logout();
             }
             catch (FileNotFoundException)
             {
-                throw new FileNotFoundException("File not found");
+                throw new FileNotFoundException("JWT Token file not found.");
             }
         }
     }

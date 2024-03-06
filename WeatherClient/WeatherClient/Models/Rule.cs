@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net.Http;
-using System.Threading.Tasks;
+﻿using System.Text;
 using System.Net;
-using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 using WeatherClient.Utilities;
 using WeatherClient.Exceptions;
 using System.Text.RegularExpressions;
-using System.Runtime.ExceptionServices;
 
 namespace WeatherClient.Models;
 
@@ -33,7 +26,7 @@ internal class Rule
     {
         Rules = new WeatherParameters();
         TriggerPeriod = string.Empty;
-        List<string> Location = new();
+        Location = new();
         Id = string.Empty;
     }
 
@@ -49,7 +42,7 @@ internal class Rule
 
     private static string GetToken()
     {
-        // Get the folder where the tokes is stored.
+        // get the folder where the tokes is stored
         string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
         string token = File.ReadAllText(appDataPath);
         string token_to_return = token.Replace("\n", "").Replace("\r", "");
@@ -62,7 +55,7 @@ internal class Rule
         using (HttpClient httpC = new HttpClient())
         {
             httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            string jsonData = Utilities.JsonUtility.SerializeJSON(this);
+            string jsonData = JsonUtility.SerializeJSON(this);
             HttpRequestMessage request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
@@ -74,6 +67,10 @@ internal class Rule
             if ((int)response.StatusCode == 401)
             {
                 throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+            }
+            if ((int)response.StatusCode == 400)
+            {
+                throw new BadRequestException("Bad request! Please enter again.");
             }
             else if ((int)response.StatusCode != 200)
             {

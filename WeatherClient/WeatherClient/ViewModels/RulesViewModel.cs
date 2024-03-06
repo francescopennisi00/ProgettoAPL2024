@@ -3,7 +3,6 @@ using WeatherClient.Models;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using WeatherClient.Exceptions;
-using WeatherClient.Views;
 
 namespace WeatherClient.ViewModels;
 
