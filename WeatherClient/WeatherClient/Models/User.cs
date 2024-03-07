@@ -43,7 +43,7 @@ internal class User
             HttpResponseMessage response = httpC.Send(request);
             if ((int)response.StatusCode == 401)
             {
-                throw new UsernamePswWrongException("Username or password wrong. Retry!");
+                throw new UsernamePswWrongException("Email or password wrong. Retry!");
             }
             if ((int)response.StatusCode == 400)
             {
@@ -115,7 +115,7 @@ internal class User
             HttpResponseMessage response = httpC.Send(request);
             if ((int)response.StatusCode == 401)
             {
-                throw new UsernamePswWrongException("Username or password wrong. Retry!");
+                throw new UsernamePswWrongException("Email or password wrong. Retry!");
             }
             if ((int)response.StatusCode == 400)
             {

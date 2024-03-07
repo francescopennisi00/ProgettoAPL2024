@@ -22,7 +22,7 @@
 
             <VerticalStackLayout x:Name="DataStack" VerticalOptions="CenterAndExpand" Margin="40,0,40,0">
 
-                <Entry Placeholder="Username" IsVisible="{Binding IsVisibleLogin}" Text="{Binding UserName}"/>
+                <Entry Placeholder="Email" IsVisible="{Binding IsVisibleLogin}" Text="{Binding UserName}"/>
 
                 <Entry IsPassword="True" Placeholder="Password" IsVisible="{Binding IsVisibleLogin}" Text="{Binding Password}" />
 

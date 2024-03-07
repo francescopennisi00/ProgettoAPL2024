@@ -9,7 +9,7 @@ import (
 
 type Credentials struct {
 	Email    string `json:"email"`
-	Password string `json:"psw"`
+	Password string `json:"password"`
 }
 
 func CalculateHash(inputString string) string {

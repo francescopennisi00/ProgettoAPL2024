@@ -13,7 +13,7 @@
 
         <VerticalStackLayout VerticalOptions="Center">
 
-            <Entry x:Name="Entry_Username" Placeholder="Username" Text="{Binding UserName}"/>
+            <Entry x:Name="Entry_Username" Placeholder="Email" Text="{Binding UserName}"/>
 
             <Entry x:Name="Entry_Password" IsPassword="True" Placeholder="Password" Text="{Binding Password}" />
             <Entry x:Name="Entry_ConfirmPassword" IsPassword="True" Placeholder="Confirm password" Text="{Binding ConfirmPassword}" />

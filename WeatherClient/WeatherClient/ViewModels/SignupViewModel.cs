@@ -38,7 +38,7 @@ internal class SignupViewModel
         // data validation checks
         if (string.IsNullOrEmpty(UserName) || string.IsNullOrEmpty(Password))
         {
-            await App.Current.MainPage.DisplayAlert("Warning", "Fill in the username and password fields.", "OK");
+            await App.Current.MainPage.DisplayAlert("Warning", "Fill in the email and password fields.", "OK");
             return;
         }
         if (ConfirmPassword != Password)
