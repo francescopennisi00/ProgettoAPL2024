@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -31,8 +32,12 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	email := cred.Email
+	log.SetPrefix("[INFO] ")
+	log.Println(fmt.Sprintf("EMAIL: %s", email))
 	password := cred.Password
 	hashPsw := umUtils.CalculateHash(password)
+	log.SetPrefix("[INFO] ")
+	log.Println(fmt.Sprintf("HASH PSW: %s", hashPsw))
 	var dbConn umTypes.DatabaseConnector
 	_, err = dbConn.StartDBConnection(umUtils.DBConnString)
 	defer func(database *umTypes.DatabaseConnector) {
@@ -44,9 +49,13 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	query := fmt.Sprintf("SELECT email, password FROM users WHERE email='%s' AND password='%s'", email, hashPsw)
-	_, _, errorVar := dbConn.ExecuteQuery(query)
+	log.SetPrefix("[INFO] ")
+	log.Println(fmt.Sprintf("EXECUTING QUERY: %s", query))
+	_, res, errorVar := dbConn.ExecuteQuery(query)
 	if errorVar != nil {
 		if errors.Is(errorVar, sql.ErrNoRows) {
+			log.SetPrefix("[INFO] ")
+			log.Println("No rows founded!")
 			umUtils.SetResponseMessage(writer, http.StatusUnauthorized, "Email or password wrong! Retry!")
 			return
 		} else {
@@ -54,6 +63,9 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 	}
+	log.SetPrefix("[INFO] ")
+	log.Println(fmt.Sprintf("Founded a row: %s, %s", res[0][0], res[0][1]))
+	log.Println("Email and password correctly inserted!")
 
 	tokenExpireTime := time.Now().Add(time.Duration(umUtils.HourTokenExpiration) * time.Hour) // 3 days from now
 
