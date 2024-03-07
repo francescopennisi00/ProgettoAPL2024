@@ -56,21 +56,33 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	triggerPeriod := rules.TriggerPeriod
+	// inserted only because Decode function don't forbid to send body request with a json tag different from "trigger_period"
+	// and, if user do that, the field rules.TriggerPeriod is filled with the zero value of string i.e. empty string ""
+	if triggerPeriod == "" {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+	if len(rules.Location) == 0 {
+		// if the client doesn't respect the right JSON format of the request, len(rules.Location) == 0
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
 	locationName := rules.Location[0]
 	locationLatitude := rules.Location[1]
 	latitudeFloat, errConv := strconv.ParseFloat(locationLatitude, 64)
 	if errConv != nil {
-		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during latitude conversion from string to float64: %v", errConv))
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error during latitude conversion from string to float64: %v", errConv))
 	}
 	roundedLatitude := wmsUtils.Round(latitudeFloat, 3)
 	locationLongitude := rules.Location[2]
 	longitudeFloat, errParse := strconv.ParseFloat(locationLongitude, 64)
 	if errParse != nil {
-		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during longitude conversion from string to float64: %v", errParse))
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error during longitude conversion from string to float64: %v", errParse))
 	}
 	roundedLongitude := wmsUtils.Round(longitudeFloat, 3)
 	countryCode := rules.Location[3]
 	stateCode := rules.Location[4]
+
 	log.SetPrefix("[INFO] ")
 	log.Printf("LOCATION %s %s %s %s %s\n\n", locationName, locationLatitude, locationLongitude, countryCode, stateCode)
 
@@ -110,19 +122,97 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 
 	// insert rule's values into a RulesIntoDB type variable
 	var rulesIntoDB wmsUtils.RulesIntoDB
-	rulesIntoDB.MaxTemp = rules.Rules.MaxTemp
-	rulesIntoDB.MinTemp = rules.Rules.MinTemp
-	rulesIntoDB.MaxHumidity = rules.Rules.MaxHumidity
-	rulesIntoDB.MinHumidity = rules.Rules.MinHumidity
-	rulesIntoDB.MaxPressure = rules.Rules.MaxPressure
-	rulesIntoDB.MinPressure = rules.Rules.MinPressure
-	rulesIntoDB.MaxWindSpeed = rules.Rules.MaxWindSpeed
-	rulesIntoDB.MinWindSpeed = rules.Rules.MinWindSpeed
-	rulesIntoDB.WindDirection = rules.Rules.WindDirection
-	rulesIntoDB.Rain = rules.Rules.Rain
-	rulesIntoDB.Snow = rules.Rules.Snow
-	rulesIntoDB.MaxCloud = rules.Rules.MaxCloud
-	rulesIntoDB.MinCloud = rules.Rules.MinCloud
+
+	if rules.Rules.MaxTemp != "" {
+		rulesIntoDB.MaxTemp = rules.Rules.MaxTemp
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.MinTemp != "" {
+		rulesIntoDB.MinTemp = rules.Rules.MinTemp
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.MaxHumidity != "" {
+		rulesIntoDB.MaxHumidity = rules.Rules.MaxHumidity
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.MinHumidity != "" {
+		rulesIntoDB.MinHumidity = rules.Rules.MinHumidity
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.MaxPressure != "" {
+		rulesIntoDB.MaxPressure = rules.Rules.MaxPressure
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.MinPressure != "" {
+		rulesIntoDB.MinPressure = rules.Rules.MinPressure
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.MaxWindSpeed != "" {
+		rulesIntoDB.MaxWindSpeed = rules.Rules.MaxWindSpeed
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.MinWindSpeed != "" {
+		rulesIntoDB.MinWindSpeed = rules.Rules.MinWindSpeed
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.WindDirection != "" {
+		rulesIntoDB.WindDirection = rules.Rules.WindDirection
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.Rain != "" {
+		rulesIntoDB.Rain = rules.Rules.Rain
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.Snow != "" {
+		rulesIntoDB.Snow = rules.Rules.Snow
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.MaxCloud != "" {
+		rulesIntoDB.MaxCloud = rules.Rules.MaxCloud
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
+	if rules.Rules.MinCloud != "" {
+		rulesIntoDB.MinCloud = rules.Rules.MinCloud
+	} else {
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
 
 	jsonRulesBytes, errMar := json.Marshal(rulesIntoDB)
 	if errMar != nil {

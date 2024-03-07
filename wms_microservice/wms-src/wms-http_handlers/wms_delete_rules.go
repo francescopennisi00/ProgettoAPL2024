@@ -58,22 +58,30 @@ func DeleteRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	if len(location.Location) == 0 {
+		// if the client doesn't respect the right JSON format of the request, len(location.Location) == 0
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
+
 	// extract information about location whose rules have to be deleted for the logged user
+
 	locationName := location.Location[0]
 	latitude := location.Location[1]
 	latitudeFloat, errConv := strconv.ParseFloat(latitude, 64)
 	if errConv != nil {
-		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during latitude conversion from string to float64: %v", errConv))
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error during latitude conversion from string to float64: %v", errConv))
 	}
 	roundedLatitude := wmsUtils.Round(latitudeFloat, 3)
 	longitude := location.Location[2]
 	longitudeFloat, errParse := strconv.ParseFloat(longitude, 64)
 	if errParse != nil {
-		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error during longitude conversion from string to float64: %v", errParse))
+		wmsUtils.SetResponseMessage(writer, http.StatusBadRequest, fmt.Sprintf("Error during longitude conversion from string to float64: %v", errParse))
 	}
 	roundedLongitude := wmsUtils.Round(longitudeFloat, 3)
 	countryCode := location.Location[3]
 	stateCode := location.Location[4]
+
 	log.SetPrefix("[INFO] ")
 	log.Printf("LOCATION %s %s %s %s %s\n\n", locationName, latitude, longitude, countryCode, stateCode)
 

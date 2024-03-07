@@ -26,7 +26,7 @@ internal class Rule
     {
         Rules = new WeatherParameters();
         TriggerPeriod = string.Empty;
-        Location = new();
+        Location = null;
         Id = string.Empty;
     }
 
