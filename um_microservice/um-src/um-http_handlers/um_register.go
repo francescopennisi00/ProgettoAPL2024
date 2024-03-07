@@ -29,7 +29,19 @@ func RegisterHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	email := cred.Email
+	// inserted only because Decode function don't forbid to send body request with a json tag different from "email"
+	// and, if user do that, the field Email is filled with the zero value of string i.e. empty string ""
+	if email == "" {
+		umUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
 	password := cred.Password
+	// inserted only because Decode function don't forbid to send body request with a json tag different from "password"
+	// and, if user do that, the field Password is filled with the zero value of string i.e. empty string ""
+	if password == "" {
+		umUtils.SetResponseMessage(writer, http.StatusBadRequest, "Error in reading data! The request must be in the correct JSON format")
+		return
+	}
 	var dbConn umTypes.DatabaseConnector
 	_, err = dbConn.StartDBConnection(umUtils.DBConnString)
 	defer func(database *umTypes.DatabaseConnector) {
