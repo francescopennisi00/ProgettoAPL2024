@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Input;
 using WeatherClient.Exceptions;
+using WeatherClient.Views;
 
 namespace WeatherClient.ViewModels;
 
@@ -550,21 +551,21 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
             var title = "Warning!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            await Shell.Current.GoToAsync(nameof(Views.LoginPage));
+            await Shell.Current.GoToAsync(nameof(AllRulesPage));
         }
         catch (TokenNotValidException exc)
         {
             var title = "Login Required!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            await Shell.Current.GoToAsync(nameof(Views.LoginPage));
+            await Shell.Current.GoToAsync("//LoginRoute");
         }
         catch (ServerException exc)
         {
             var title = "Error!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            await Shell.Current.GoToAsync(nameof(Views.AllRulesPage));
+            await Shell.Current.GoToAsync(nameof(AllRulesPage));
         }
         await Shell.Current.GoToAsync($"..?saved={_rule.Id}");
     }
@@ -580,21 +581,21 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
             var title = "Warning!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            await Shell.Current.GoToAsync(nameof(Views.LoginPage));
+            await Shell.Current.GoToAsync(nameof(AllRulesPage));
         }
         catch (TokenNotValidException exc)
         {
             var title = "Login Required!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            await Shell.Current.GoToAsync(nameof(Views.LoginPage));
+            await Shell.Current.GoToAsync("//LoginRoute");
         }
         catch (ServerException exc)
         {
             var title = "Error!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            await Shell.Current.GoToAsync(nameof(Views.AllRulesPage));
+            await Shell.Current.GoToAsync(nameof(AllRulesPage));
         }
         await Shell.Current.GoToAsync($"..?deleted={_rule.Id}");
     }
@@ -613,20 +614,21 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
                 var title = "Login Required!";
                 var message = exc.Errormessage;
                 await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-                await Shell.Current.GoToAsync(nameof(Views.LoginPage));
+                await Shell.Current.GoToAsync("//LoginRoute");
             }
             catch (ServerException exc)
             {
                 var title = "Error!";
                 var message = exc.Errormessage;
                 await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-                await Shell.Current.GoToAsync(nameof(Views.AllRulesPage));
+                await Shell.Current.GoToAsync(nameof(AllRulesPage));
             }
             catch (Exception)
             {
                 var title = "Error!";
                 var message = "Error in loading rule.";
                 await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+                await Shell.Current.GoToAsync(nameof(AllRulesPage));
             }
         }
         if (query.ContainsKey("add"))
@@ -649,20 +651,21 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
             var title = "Login Required!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            await Shell.Current.GoToAsync(nameof(Views.LoginPage));
+            await Shell.Current.GoToAsync("//LoginRoute");
         }
         catch (ServerException exc)
         {
             var title = "Error!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            await Shell.Current.GoToAsync(nameof(Views.AllRulesPage));
+            await Shell.Current.GoToAsync(nameof(AllRulesPage));
         }
         catch (Exception)
         {
             var title = "Error!";
             var message = "Error in loading rule.";
-            Application.Current.MainPage.DisplayAlert(title, message, "OK").Wait();
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            await Shell.Current.GoToAsync(nameof(AllRulesPage));
         }
         RefreshProperties();
     }

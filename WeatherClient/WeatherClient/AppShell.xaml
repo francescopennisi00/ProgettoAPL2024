@@ -13,10 +13,10 @@
             ContentTemplate="{DataTemplate views:LoginPage}"
             Icon="{OnPlatform 'icon_account.png', iOS='icon_account.png', MacCatalyst='icon_account.png'}" />
         <ShellContent
-            Title="Your Rules"
-            Route="AllRulesRoute"
-            ContentTemplate="{DataTemplate views:AllRulesPage}"
-            Icon="{OnPlatform 'icon_notes.png', iOS='icon_notes_ios.png', MacCatalyst='icon_notes_ios.png'}" />
+           Title="Your Rules"
+           Route="AllRulesRoute"
+           ContentTemplate="{DataTemplate views:AllRulesPage}"
+           Icon="{OnPlatform 'icon_notes.png', iOS='icon_notes_ios.png', MacCatalyst='icon_notes_ios.png'}" />
         <ShellContent
             Title="About"
             ContentTemplate="{DataTemplate views:AboutPage}"

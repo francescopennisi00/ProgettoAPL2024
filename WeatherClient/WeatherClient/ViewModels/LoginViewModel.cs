@@ -9,8 +9,9 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
 {
     private User _user;
 
-    public bool IsVisibleLogin { get; private set; }
-    public bool IsVisibleLogout { get; private set; }
+    public bool IsVisibleLogin { get; set; } = true;
+    public bool IsVisibleLogout { get; set; } = false;
+    public bool IsVisiblePasswordDeleteAccount { get; set; } = false;
 
     public string UserName
     {
@@ -24,7 +25,11 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
     public string Password
     {
         get => _user.Password;
-        set => _user.Password = value;
+        set 
+        { 
+            _user.Password = value; 
+            OnPropertyChanged(nameof(Password));
+        }
     }
 
     public ICommand Login { get; set; }
@@ -35,8 +40,21 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
     public LoginViewModel()
     {
         _user = new User();
-        IsVisibleLogin = true;
-        IsVisibleLogout = false;
+
+        // we assume that user is logged in, if he is not, then the other constructor is called
+        IsVisibleLogin = false;  
+        IsVisibleLogout = true;
+        var email = Utilities.TokenUtility.findUsernameByToken();
+        if (email != "null")
+        {
+            UserName = email;
+        } else
+        {
+            // user is not logged in and we change visibility of UI elements
+            IsVisibleLogin = true;
+            IsVisibleLogout = false;
+        }
+
         Login = new Command(LoginClicked);
         Signup = new Command(SignupClicked);
         Logout = new Command(LogoutClicked);
@@ -109,15 +127,22 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
     {
         try
         {
-            _user.DeleteAccount();
-            IsVisibleLogin = true;
-            IsVisibleLogout = false;
-            OnPropertyChanged(nameof(IsVisibleLogin));
-            OnPropertyChanged(nameof(IsVisibleLogout));
-            _user.Password = String.Empty;
-            _user.UserName = String.Empty;
-            OnPropertyChanged(nameof(Password));
-            OnPropertyChanged(nameof(UserName));
+            IsVisiblePasswordDeleteAccount = true;
+            OnPropertyChanged(nameof(IsVisiblePasswordDeleteAccount));
+            if (Password != null)  // instead, if Password is null then user will have to insert it in order to delete account
+            {
+                _user.DeleteAccount();
+                IsVisibleLogin = true;
+                IsVisibleLogout = false;
+                IsVisiblePasswordDeleteAccount = false;
+                OnPropertyChanged(nameof(IsVisibleLogin));
+                OnPropertyChanged(nameof(IsVisibleLogout));
+                OnPropertyChanged(nameof(IsVisiblePasswordDeleteAccount));
+                _user.Password = String.Empty;
+                _user.UserName = String.Empty;
+                OnPropertyChanged(nameof(Password));
+                OnPropertyChanged(nameof(UserName));
+            }
         }
         catch (Exception exc)
         {

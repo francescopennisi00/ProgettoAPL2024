@@ -3,6 +3,7 @@ using WeatherClient.Models;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using WeatherClient.Exceptions;
+using WeatherClient.Views;
 
 namespace WeatherClient.ViewModels;
 
@@ -23,9 +24,6 @@ internal class RulesViewModel : IQueryAttributable
         }
         catch (TokenNotValidException exc)
         {
-            var title = "Warning!";
-            var message = exc.Errormessage;
-            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
             await Shell.Current.GoToAsync("//LoginRoute");
         }
         catch (ServerException exc)
@@ -50,13 +48,13 @@ internal class RulesViewModel : IQueryAttributable
 
     private async Task NewRuleAsync()
     {
-        await Shell.Current.GoToAsync($"{nameof(Views.RulesPage)}?add={true}");
+        await Shell.Current.GoToAsync($"{nameof(RulesPage)}?add={true}");
     }
 
     private async Task SelectRuleAsync(RuleViewModel rule)
     {
         if (rule != null)
-            await Shell.Current.GoToAsync($"{nameof(Views.RulesPage)}?load={rule.Id}");
+            await Shell.Current.GoToAsync($"{nameof(RulesPage)}?load={rule.Id}");
     }
 
     async void IQueryAttributable.ApplyQueryAttributes(IDictionary<string, object> query)
@@ -99,7 +97,7 @@ internal class RulesViewModel : IQueryAttributable
                 {
                     var title = "Login Required!";
                     Application.Current.MainPage.DisplayAlert(title, ex.Message, "OK");
-                    Shell.Current.GoToAsync("//LoginRoute");
+                    await Shell.Current.GoToAsync("//LoginRoute");
 
                 }
                 catch (Exception ex)

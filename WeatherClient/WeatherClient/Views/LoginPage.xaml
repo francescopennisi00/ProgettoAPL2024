@@ -28,6 +28,8 @@
 
                 <Label IsVisible="{Binding IsVisibleLogout}" Text="{Binding UserName}" FontSize="20" TextColor="Black" HorizontalOptions="Center" VerticalOptions="CenterAndExpand" HorizontalTextAlignment="Center" VerticalTextAlignment="Center"/>
 
+                <Entry IsPassword="True" Placeholder="Enter password" IsVisible="{Binding IsVisiblePasswordDeleteAccount}" Text="{Binding Password}" />
+
                 <Button Text="Have already an account? Sign in!" IsVisible="{Binding IsVisibleLogin}" Command="{Binding Login}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>
 
                 <Button Text="Don't have an account yet? Sign up!" IsVisible="{Binding IsVisibleLogin}" Command="{Binding Signup}" HorizontalOptions="Fill" Margin="0,20,0,0" Padding="15, 5"/>

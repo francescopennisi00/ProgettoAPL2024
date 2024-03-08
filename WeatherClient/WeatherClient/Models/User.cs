@@ -22,14 +22,6 @@ internal class User
     {
     }
 
-    private static string ExtractToken(string response)
-    {
-
-        int colonIndex = response.IndexOf(':');
-        string token = response.Substring(colonIndex + 2);
-        return token;
-    }
-
     public async Task Login()
     {
         using (HttpClient httpC = new HttpClient())
@@ -55,7 +47,7 @@ internal class User
                 throw new ServerException("Failed to login due an internal server error.");
             }
             string responseString = await response.Content.ReadAsStringAsync();
-            var token = ExtractToken(responseString);
+            var token = Utilities.TokenUtility.ExtractToken(responseString);
             File.WriteAllText(Utilities.Constants.tokenPath, token);
         }
     }

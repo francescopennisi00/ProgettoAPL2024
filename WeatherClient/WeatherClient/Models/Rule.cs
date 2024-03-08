@@ -40,25 +40,9 @@ internal class Rule
         Id = id;
     }
 
-    private static string GetToken()
-    {
-        // get the folder where the token is stored
-        string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
-        if (File.Exists(appDataPath)) {
-            string token = File.ReadAllText(appDataPath);
-            // remove carriage return and new line characters from token writed in the text file
-            string token_to_return = token.Replace("\n", "").Replace("\r", "");
-            return token_to_return;
-        } else
-        {
-            return "null";
-        }
-
-    }
-
     private static HttpResponseMessage DoHttpRequest(string url, string content)
     {
-        string token = GetToken();
+        string token = TokenUtility.GetToken();
         if (token == "null")
         {
             // user is not logged in
