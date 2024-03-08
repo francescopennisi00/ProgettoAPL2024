@@ -147,23 +147,34 @@ internal class Rule
         return;
     }
 
-    public static Rule Load(string id)
+    public static async Task<Rule> Load(string id)
     {
-        IEnumerable<Rule> rules = LoadAll().Result;
-        foreach (Rule rule in rules)
+        try
         {
-            if (rule.Id == id)
+            IEnumerable<Rule> rules = await LoadAll();
+            foreach (Rule rule in rules)
             {
-                return new()
+                if (rule.Id == id)
                 {
-                    Rules = rule.Rules,
-                    Id = rule.Id,
-                    TriggerPeriod = rule.TriggerPeriod,
-                    Location = rule.Location
-                };
+                    return new()
+                    {
+                        Rules = rule.Rules,
+                        Id = rule.Id,
+                        TriggerPeriod = rule.TriggerPeriod,
+                        Location = rule.Location
+                    };
+                }
             }
+            throw new Exception("Error! Rule not found!");
+        } 
+        catch (TokenNotValidException)
+        {
+            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+        } 
+        catch (ServerException)
+        {
+            throw new ServerException("Failed to load rules due an internal server error.");
         }
-        throw new Exception("Error! Rule not found!");
     }
 
     public static async Task<IEnumerable<Rule>> LoadAll()

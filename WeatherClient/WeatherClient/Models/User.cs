@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Net;
 using System.Text;
 using WeatherClient.Exceptions;
 
@@ -41,15 +42,15 @@ internal class User
                 Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
             };
             HttpResponseMessage response = httpC.Send(request);
-            if ((int)response.StatusCode == 401)
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 throw new UsernamePswWrongException("Email or password wrong. Retry!");
             }
-            if ((int)response.StatusCode == 400)
+            if (response.StatusCode == HttpStatusCode.BadRequest)
             {
                 throw new BadRequestException("Bad request! Please enter again.");
             }
-            else if ((int)response.StatusCode != 200)
+            else if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new ServerException("Failed to login due an internal server error.");
             }
@@ -71,11 +72,11 @@ internal class User
                 Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
             };
             HttpResponseMessage response = httpC.Send(request);
-            if ((int)response.StatusCode == 400)
+            if (response.StatusCode == HttpStatusCode.BadRequest)
             {
                 throw new EmailAlreadyInUseException("Email already in use. Try to sign in!");
             }
-            else if ((int)response.StatusCode != 200)
+            else if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new ServerException("Failed to signup due an internal server error.");
             }
@@ -109,15 +110,15 @@ internal class User
                 Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
             };
             HttpResponseMessage response = httpC.Send(request);
-            if ((int)response.StatusCode == 401)
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 throw new UsernamePswWrongException("Email or password wrong. Retry!");
             }
-            if ((int)response.StatusCode == 400)
+            if (response.StatusCode == HttpStatusCode.BadRequest)
             {
                 throw new BadRequestException("Bad request! Please enter again.");
             }
-            else if ((int)response.StatusCode != 200)
+            else if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new ServerException("Failed to delete account due an internal server error.");
             }

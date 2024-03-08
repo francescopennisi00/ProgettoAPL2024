@@ -59,7 +59,7 @@ internal class RulesViewModel : IQueryAttributable
             await Shell.Current.GoToAsync($"{nameof(Views.RulesPage)}?load={rule.Id}");
     }
 
-    void IQueryAttributable.ApplyQueryAttributes(IDictionary<string, object> query)
+    async void IQueryAttributable.ApplyQueryAttributes(IDictionary<string, object> query)
     {
         if (query.ContainsKey("deleted"))
         {
@@ -87,7 +87,8 @@ internal class RulesViewModel : IQueryAttributable
             {
                 try
                 {
-                    AllRules.Insert(0, new RuleViewModel(Rule.Load(id)));
+                    Rule ruleToAdd = await Rule.Load(id);
+                    AllRules.Insert(0, new RuleViewModel(ruleToAdd));
                 }
                 catch (ServerException ex)
                 {
@@ -96,7 +97,7 @@ internal class RulesViewModel : IQueryAttributable
                 }
                 catch (TokenNotValidException ex)
                 {
-                    var title = "Error!";
+                    var title = "Login Required!";
                     Application.Current.MainPage.DisplayAlert(title, ex.Message, "OK");
                     Shell.Current.GoToAsync("//LoginRoute");
 
