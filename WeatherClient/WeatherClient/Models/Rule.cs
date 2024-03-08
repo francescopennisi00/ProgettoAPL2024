@@ -44,15 +44,26 @@ internal class Rule
     {
         // get the folder where the token is stored
         string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
-        string token = File.ReadAllText(appDataPath);
-        // remove carriage return and new line characters from token writed in the text file
-        string token_to_return = token.Replace("\n", "").Replace("\r", "");
-        return token_to_return;
+        if (File.Exists(appDataPath)) {
+            string token = File.ReadAllText(appDataPath);
+            // remove carriage return and new line characters from token writed in the text file
+            string token_to_return = token.Replace("\n", "").Replace("\r", "");
+            return token_to_return;
+        } else
+        {
+            return "null";
+        }
+
     }
 
     private static HttpResponseMessage DoHttpRequest(string url, string content)
     {
         string token = GetToken();
+        if (token == "null")
+        {
+            // user is not logged in
+            return new HttpResponseMessage(HttpStatusCode.Unauthorized);
+        }
         using (HttpClient httpC = new HttpClient())
         {
             httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -65,7 +76,8 @@ internal class Rule
                     Content = new StringContent(content, Encoding.UTF8, "application/json")
                 };
                 return httpC.Send(request);
-            } else
+            }
+            else
             {
                 HttpRequestMessage request = new HttpRequestMessage
                 {
@@ -81,7 +93,7 @@ internal class Rule
     public async Task<string> Save()
     {
         string jsonData = JsonUtility.SerializeJSON(this);
-        var response = DoHttpRequest(Constants.urlUpdate, jsonData); 
+        var response = DoHttpRequest(Constants.urlUpdate, jsonData);
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
@@ -119,7 +131,7 @@ internal class Rule
     public void Delete()
     {
         string jsonData = JsonUtility.SerializeJSON(this);
-        var response = DoHttpRequest(Constants.urlDelete,jsonData);
+        var response = DoHttpRequest(Constants.urlDelete, jsonData);
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
@@ -153,46 +165,26 @@ internal class Rule
         }
         throw new Exception("Error! Rule not found!");
     }
- 
-    public static async Task<IEnumerable<Rule>> LoadAllAsync()
+
+    public static async Task<IEnumerable<Rule>> LoadAll()
     {
         var response = DoHttpRequest(Constants.urlShow, null);
 
         if (response.IsSuccessStatusCode)
         {
             string responseContent = await response.Content.ReadAsStringAsync();
-            return JsonUtility.DeserializeJSON<IEnumerable<Rule>>(responseContent);
-        }
-        else if (response.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
-        }
-        else if (response.StatusCode == HttpStatusCode.BadRequest)
-        {
-            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
-        }
-        else
-        {
-            throw new ServerException("Failed to load rules due an internal server error.");
-        }
-    }
-
-    public static async Task<IEnumerable<Rule>> LoadAll()
-    {
-        try
-        {
-            IEnumerable<Rule> rules = await LoadAllAsync();
+            IEnumerable<Rule> rules = JsonUtility.DeserializeJSON<IEnumerable<Rule>>(responseContent);
             if (rules == null)
             {
                 return new List<Rule>();
             }
             return rules;
         }
-        catch(TokenNotValidException)
+        else if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
         }
-        catch(ServerException)
+        else
         {
             throw new ServerException("Failed to load rules due an internal server error.");
         }

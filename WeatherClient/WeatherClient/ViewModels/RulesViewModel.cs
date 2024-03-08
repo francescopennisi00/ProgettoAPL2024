@@ -10,34 +10,35 @@ internal class RulesViewModel : IQueryAttributable
 {
     private Rule rule;
 
-    public ObservableCollection<RuleViewModel> AllRules { get; }
+    public ObservableCollection<RuleViewModel> AllRules { get; private set; }
     public ICommand NewCommand { get; }
     public ICommand SelectNoteCommand { get; }
-    public RulesViewModel()
+
+    public async void LoadAllRules()
     {
         try
         {
-            AllRules = new ObservableCollection<RuleViewModel>(Rule.LoadAll().Result.Select(n => new RuleViewModel(n)));
+            var results = await Rule.LoadAll();
+            AllRules = new ObservableCollection<RuleViewModel>(results.Select(n => new RuleViewModel(n)));
         }
         catch (TokenNotValidException exc)
         {
-            var title = "Error!";
+            var title = "Warning!";
             var message = exc.Errormessage;
-            Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            await Shell.Current.GoToAsync("//LoginRoute");
         }
         catch (ServerException exc)
         {
-            var title = "Warning!";
+            var title = "Error!";
             var message = exc.Errormessage;
-            Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
         }
-        catch (AggregateException)
-        {
-            var title = "Warning!";
-            var message = "You need to be authenticate!";
-            Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            Shell.Current.GoToAsync("//LoginRoute");
-        }
+    }
+
+    public RulesViewModel()
+    {
+        LoadAllRules();
         NewCommand = new AsyncRelayCommand(NewRuleAsync);
         SelectNoteCommand = new AsyncRelayCommand<RuleViewModel>(SelectRuleAsync);
     }
@@ -83,7 +84,29 @@ internal class RulesViewModel : IQueryAttributable
 
             // If rule isn't found, it's new; add it.
             else
-                AllRules.Insert(0, new RuleViewModel(Rule.Load(id)));
+            {
+                try
+                {
+                    AllRules.Insert(0, new RuleViewModel(Rule.Load(id)));
+                }
+                catch (ServerException ex)
+                {
+                    var title = "Error!";
+                    Application.Current.MainPage.DisplayAlert(title, ex.Message, "OK");   
+                }
+                catch (TokenNotValidException ex)
+                {
+                    var title = "Error!";
+                    Application.Current.MainPage.DisplayAlert(title, ex.Message, "OK");
+                    Shell.Current.GoToAsync("//LoginRoute");
+
+                }
+                catch (Exception ex)
+                {
+                    var title = "Warning!";
+                    Application.Current.MainPage.DisplayAlert(title, ex.Message, "OK");
+                }
+            }
         }
     }
 }
