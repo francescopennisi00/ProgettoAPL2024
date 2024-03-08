@@ -57,7 +57,7 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
         }
         catch (UsernamePswWrongException exc)
         {
-            var title = "Error!";
+            var title = "Wrong Authentication!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
         }
@@ -69,7 +69,7 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
         }
         catch (ServerException exc)
         {
-            var title = "Warning!";
+            var title = "Internal Error!";
             var message = exc.Errormessage;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
         }

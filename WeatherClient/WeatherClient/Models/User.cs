@@ -71,13 +71,9 @@ internal class User
                 Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
             };
             HttpResponseMessage response = httpC.Send(request);
-            if ((int)response.StatusCode == 401)
-            {
-                throw new EmailAlreadyInUseException("Email already in use. Try to sign in!");
-            }
             if ((int)response.StatusCode == 400)
             {
-                throw new BadRequestException("Bad request! Please enter again.");
+                throw new EmailAlreadyInUseException("Email already in use. Try to sign in!");
             }
             else if ((int)response.StatusCode != 200)
             {

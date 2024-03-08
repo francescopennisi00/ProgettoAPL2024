@@ -83,7 +83,7 @@ internal class RulesViewModel : IQueryAttributable
 
             // If rule isn't found, it's new; add it.
             else
-                AllRules.Insert(0, new RuleViewModel(Models.Rule.Load(id)));
+                AllRules.Insert(0, new RuleViewModel(Rule.Load(id)));
         }
     }
 }

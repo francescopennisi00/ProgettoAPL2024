@@ -42,70 +42,97 @@ internal class Rule
 
     private static string GetToken()
     {
-        // get the folder where the tokes is stored
+        // get the folder where the token is stored
         string appDataPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
         string token = File.ReadAllText(appDataPath);
+        // remove carriage return and new line characters from token writed in the text file
         string token_to_return = token.Replace("\n", "").Replace("\r", "");
         return token_to_return;
     }
 
-    private async Task<string> DoRequest(string url)
+    private static HttpResponseMessage DoHttpRequest(string url, string content)
     {
         string token = GetToken();
         using (HttpClient httpC = new HttpClient())
         {
             httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            string jsonData = JsonUtility.SerializeJSON(this);
-            HttpRequestMessage request = new HttpRequestMessage
+            if (content != null)
             {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(url),
-                Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
-            };
-            var prova = request.Content;
-            HttpResponseMessage response = httpC.Send(request);
-            if ((int)response.StatusCode == 401)
-            {
-                throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
-            }
-            if ((int)response.StatusCode == 400)
-            {
-                throw new BadRequestException("Bad request! Please enter again.");
-            }
-            else if ((int)response.StatusCode != 200)
-            {
-                throw new ServerException("Failed to load rules due an internal server error.");
-            }
-            var stringReturned = await response.Content.ReadAsStringAsync();
-            // next instructions only if request is an update, not a delete and this update is an insert of a new rule
-            if (url == Constants.urlUpdate && Id == String.Empty)
-            {
-                // extracting id of the new rule inserted by regular expressions
-                Regex regex = new Regex(@"\d+");
-                Match match = regex.Match(stringReturned);
-                if (match.Success)
+                HttpRequestMessage request = new HttpRequestMessage
                 {
-                    return match.Value;
-                }
-                else
-                {
-                    throw new ServerException("Error: server has not returned id of the rule inserted.");
-                }
+                    Method = HttpMethod.Post,
+                    RequestUri = new Uri(url),
+                    Content = new StringContent(content, Encoding.UTF8, "application/json")
+                };
+                return httpC.Send(request);
             } else
             {
-                return stringReturned;
+                HttpRequestMessage request = new HttpRequestMessage
+                {
+                    Method = HttpMethod.Get,
+                    RequestUri = new Uri(url),
+                    Content = null
+                };
+                return httpC.Send(request);
             }
         }
     }
 
     public async Task<string> Save()
     {
-        return await DoRequest(Constants.urlUpdate);
+        string jsonData = JsonUtility.SerializeJSON(this);
+        var response = DoHttpRequest(Constants.urlUpdate, jsonData); 
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+        }
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            throw new BadRequestException("Bad request! Please enter again.");
+        }
+        else if (response.StatusCode != HttpStatusCode.OK)
+        {
+            throw new ServerException("Failed to load rules due an internal server error.");
+        }
+        var stringReturned = await response.Content.ReadAsStringAsync();
+        // next instructions only if request is an update and this update is an insert of a new rule
+        if (Id == String.Empty)
+        {
+            // extracting id of the new rule inserted by regular expressions
+            Regex regex = new Regex(@"\d+");
+            Match match = regex.Match(stringReturned);
+            if (match.Success)
+            {
+                return match.Value;
+            }
+            else
+            {
+                throw new ServerException("Error: server has not returned id of the rule inserted.");
+            }
+        }
+        else
+        {
+            return stringReturned;
+        }
     }
 
-    public async void Delete()
+    public void Delete()
     {
-        await DoRequest(Constants.urlDelete);
+        string jsonData = JsonUtility.SerializeJSON(this);
+        var response = DoHttpRequest(Constants.urlDelete,jsonData);
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+        }
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            throw new BadRequestException("Bad request! Please enter again.");
+        }
+        else if (response.StatusCode != HttpStatusCode.OK)
+        {
+            throw new ServerException("Failed to load rules due an internal server error.");
+        }
+        return;
     }
 
     public static Rule Load(string id)
@@ -127,38 +154,24 @@ internal class Rule
         throw new Exception("Error! Rule not found!");
     }
  
-
     public static async Task<IEnumerable<Rule>> LoadAllAsync()
     {
-        try
-        {
-            string url = Constants.urlShow;
-            string token = GetToken();
-            HttpClient httpC = new HttpClient();
-            httpC.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            HttpRequestMessage request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(url),
-                Content = null
-            };
-            HttpResponseMessage response = httpC.Send(request);
+        var response = DoHttpRequest(Constants.urlShow, null);
 
-            if (response.IsSuccessStatusCode)
-            {
-                string responseContent = await response.Content.ReadAsStringAsync();
-                return JsonUtility.DeserializeJSON<IEnumerable<Rule>>(responseContent);
-            }
-            else if (response.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
-            }
-            else
-            {
-                throw new ServerException("Failed to load rules due an internal server error.");
-            }
+        if (response.IsSuccessStatusCode)
+        {
+            string responseContent = await response.Content.ReadAsStringAsync();
+            return JsonUtility.DeserializeJSON<IEnumerable<Rule>>(responseContent);
         }
-        catch (HttpRequestException)
+        else if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+        }
+        else if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            throw new TokenNotValidException("JWT Token provided is not valid. Login required.");
+        }
+        else
         {
             throw new ServerException("Failed to load rules due an internal server error.");
         }
@@ -184,30 +197,4 @@ internal class Rule
             throw new ServerException("Failed to load rules due an internal server error.");
         }
     }
-    /*
-    private async Task<HttpResponseMessage> DoRequest(HttpMethod httpreq, string url, string json)
-    {
-        try
-        {
-            HttpRequestMessage request = new HttpRequestMessage
-            {
-                Method = httpVerb,
-                RequestUri = new Uri(url),
-                Content = null
-            };
-            if (!string.IsNullOrEmpty(UserService.Instance.Token))
-                richiesta.Headers.Add("Authorization", UserService.Instance.Token); //aggiungo l'eventuale token, se disponibile
-            if (!string.IsNullOrEmpty(json))
-                richiesta.Content = new StringContent(json, Encoding.UTF8, "application/json"); //aggiungo l'eventuale contenuto
-
-            HttpResponseMessage risposta = await _client.SendAsync(richiesta);
-
-            return risposta;
-        }
-        catch (Exception e)
-        {
-            return new HttpResponseMessage(HttpStatusCode.BadRequest);
-        }
-    }
-    */
 }
