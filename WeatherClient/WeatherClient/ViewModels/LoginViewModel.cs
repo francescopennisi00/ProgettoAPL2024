@@ -146,6 +146,7 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
         }
         catch (Exception exc)
         {
+            _user.Password = String.Empty;  // we reset Password at null in order to allow user to reinsert password
             var title = "Error!";
             var message = exc.Message;
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
