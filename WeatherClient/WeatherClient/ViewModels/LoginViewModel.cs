@@ -71,7 +71,7 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
             OnPropertyChanged(nameof(IsVisibleLogin));
             OnPropertyChanged(nameof(IsVisibleLogout));
             // if login was successfull we set credentials and go to Your Rules page
-            await Shell.Current.GoToAsync("//AllRulesRoute");
+            await Shell.Current.GoToAsync($"//AllRulesRoute?login={true}");
         }
         catch (UsernamePswWrongException exc)
         {
@@ -114,6 +114,9 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
             _user.UserName = String.Empty;
             OnPropertyChanged(nameof(Password));
             OnPropertyChanged(nameof(UserName));
+            await Shell.Current.GoToAsync($"//AllRulesRoute?logout={true}");
+            await Shell.Current.GoToAsync("//LoginRoute");
+
         }
         catch (Exception exc)
         {

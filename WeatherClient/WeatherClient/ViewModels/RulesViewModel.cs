@@ -1,16 +1,16 @@
-﻿using CommunityToolkit.Mvvm.Input;
-using WeatherClient.Models;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using WeatherClient.Exceptions;
+using WeatherClient.Models;
 using WeatherClient.Views;
 
 namespace WeatherClient.ViewModels;
 
-internal class RulesViewModel : IQueryAttributable
+internal class RulesViewModel : ObservableObject, IQueryAttributable
 {
     private Rule rule;
-
     public ObservableCollection<RuleViewModel> AllRules { get; private set; }
     public ICommand NewCommand { get; }
     public ICommand SelectNoteCommand { get; }
@@ -91,7 +91,7 @@ internal class RulesViewModel : IQueryAttributable
                 catch (ServerException ex)
                 {
                     var title = "Error!";
-                    Application.Current.MainPage.DisplayAlert(title, ex.Message, "OK");   
+                    Application.Current.MainPage.DisplayAlert(title, ex.Message, "OK");
                 }
                 catch (TokenNotValidException ex)
                 {
@@ -105,6 +105,19 @@ internal class RulesViewModel : IQueryAttributable
                     var title = "Warning!";
                     Application.Current.MainPage.DisplayAlert(title, ex.Message, "OK");
                 }
+            }
+        }
+        else if (query.ContainsKey("logout"))
+        {
+            AllRules.Clear();
+            OnPropertyChanged(nameof(AllRules));
+        }
+        else if (query.ContainsKey("login"))
+        {
+            if (AllRules.Count == 0)
+            {
+                LoadAllRules();
+                OnPropertyChanged(nameof(AllRules));
             }
         }
     }
