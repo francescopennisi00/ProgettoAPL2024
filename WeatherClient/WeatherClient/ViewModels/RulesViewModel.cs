@@ -20,10 +20,17 @@ internal class RulesViewModel : ObservableObject, IQueryAttributable
         try
         {
             var results = await Rule.LoadAll();
-            AllRules = new ObservableCollection<RuleViewModel>(results.Select(n => new RuleViewModel(n)));
+            foreach (var result in results)
+            {
+                AllRules.Add(new RuleViewModel(result));
+            }
+            //AllRules = new ObservableCollection<RuleViewModel>(results.Select(n => new RuleViewModel(n)));
         }
         catch (TokenNotValidException exc)
         {
+            var title = "Error!";
+            var message = exc.Errormessage;
+            await Application.Current.MainPage.DisplayAlert(title, message, "OK");
             await Shell.Current.GoToAsync("//LoginRoute");
         }
         catch (ServerException exc)
@@ -36,6 +43,7 @@ internal class RulesViewModel : ObservableObject, IQueryAttributable
 
     public RulesViewModel()
     {
+        AllRules = new ObservableCollection<RuleViewModel>();
         LoadAllRules();
         NewCommand = new AsyncRelayCommand(NewRuleAsync);
         SelectNoteCommand = new AsyncRelayCommand<RuleViewModel>(SelectRuleAsync);
