@@ -52,7 +52,7 @@ internal class SignupViewModel
             _user.SignUp();
             await _user.Login();
             await Shell.Current.GoToAsync($"..?registered={UserName}");
-            await Shell.Current.GoToAsync("//AllRulesRoute");
+            await Shell.Current.GoToAsync($"//AllRulesRoute?login={true}");
         }
         catch (EmailAlreadyInUseException exc)
         {

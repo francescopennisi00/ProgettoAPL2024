@@ -70,7 +70,9 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
             IsVisibleLogout = true;
             OnPropertyChanged(nameof(IsVisibleLogin));
             OnPropertyChanged(nameof(IsVisibleLogout));
-            // if login was successfull we set credentials and go to Your Rules page
+            // reset password at null because we want that user have to re-insert it in order to delete his account
+            Password = null;
+            // if login was successfull we go to Your Rules page
             await Shell.Current.GoToAsync($"//AllRulesRoute?login={true}");
         }
         catch (UsernamePswWrongException exc)
@@ -169,6 +171,8 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
             {
                 UserName = username;
             }
+            // reset password at null because we want that user have to re-insert it in order to delete his account
+            Password = null;
         }
     }
 }

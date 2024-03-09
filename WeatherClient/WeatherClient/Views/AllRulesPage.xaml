@@ -11,7 +11,7 @@
 
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Add" Command="{Binding NewCommand}" IconImageSource="{FontImage Glyph='+', Color={StaticResource Primary}, Size=32}" />
+        <ToolbarItem Text="Add" IsEnabled="{Binding ActiveAddCommand}" Command="{Binding NewCommand}" IconImageSource="{FontImage Glyph='+', Color={StaticResource Primary}, Size=32}" />
     </ContentPage.ToolbarItems>
     
     <!-- Display notes in a list -->

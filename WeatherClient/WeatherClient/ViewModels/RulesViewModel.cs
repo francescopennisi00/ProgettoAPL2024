@@ -12,6 +12,7 @@ internal class RulesViewModel : ObservableObject, IQueryAttributable
 {
     private Rule rule;
     public ObservableCollection<RuleViewModel> AllRules { get; private set; }
+    public bool ActiveAddCommand { get; set; } = false;
     public ICommand NewCommand { get; }
     public ICommand SelectNoteCommand { get; }
 
@@ -24,7 +25,9 @@ internal class RulesViewModel : ObservableObject, IQueryAttributable
             {
                 AllRules.Add(new RuleViewModel(result));
             }
-            //AllRules = new ObservableCollection<RuleViewModel>(results.Select(n => new RuleViewModel(n)));
+            // if all rules was successfull we enable add command
+            ActiveAddCommand = true;
+            OnPropertyChanged(nameof(ActiveAddCommand));
         }
         catch (TokenNotValidException exc)
         {
@@ -119,6 +122,8 @@ internal class RulesViewModel : ObservableObject, IQueryAttributable
         {
             AllRules.Clear();
             OnPropertyChanged(nameof(AllRules));
+            ActiveAddCommand = false;
+            OnPropertyChanged(nameof(ActiveAddCommand));
         }
         else if (query.ContainsKey("login"))
         {
