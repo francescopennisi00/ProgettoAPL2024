@@ -110,8 +110,10 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
             _user.Logout();
             IsVisibleLogin = true;
             IsVisibleLogout = false;
+            IsVisiblePasswordDeleteAccount = false;
             OnPropertyChanged(nameof(IsVisibleLogin));
             OnPropertyChanged(nameof(IsVisibleLogout));
+            OnPropertyChanged(nameof(IsVisiblePasswordDeleteAccount));
             _user.Password = String.Empty;
             _user.UserName = String.Empty;
             OnPropertyChanged(nameof(Password));
