@@ -10,8 +10,38 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
 {
     private Models.Rule _rule;
 
-    public bool IsEditableLocation { get; private set; }
-    public bool IsNotEditableLocation { get; private set; }
+    private bool _isEditableLocation;
+    private bool _isNotEditableLocation;
+
+    public bool IsEditableLocation 
+    { 
+        get
+        {
+            return _isEditableLocation;
+        }
+        private set
+        {
+            if (value != _isEditableLocation)
+            {
+                _isEditableLocation = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsNotEditableLocation 
+    {
+        get => _isNotEditableLocation;
+        private set
+        {
+            if (value != _isNotEditableLocation)
+            {
+                _isNotEditableLocation = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public string? Id
     {
         get
@@ -513,8 +543,6 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         _rule = new Models.Rule();
         IsEditableLocation = false;
         IsNotEditableLocation = true;
-        OnPropertyChanged(nameof(IsEditableLocation));
-        OnPropertyChanged(nameof(IsNotEditableLocation));
         SaveCommand = new AsyncRelayCommand(Save);
         DeleteCommand = new AsyncRelayCommand(Delete);
     }
@@ -635,8 +663,6 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         {
             IsEditableLocation = true;
             IsNotEditableLocation = false;
-            OnPropertyChanged(nameof(IsEditableLocation));
-            OnPropertyChanged(nameof(IsNotEditableLocation));
         }
     }
 

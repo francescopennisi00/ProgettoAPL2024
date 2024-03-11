@@ -11,7 +11,7 @@
 
     <Grid Margin="20">
 
-        <VerticalStackLayout VerticalOptions="Center">
+        <VerticalStackLayout VerticalOptions="Start">
 
             <Entry x:Name="Entry_Username" Placeholder="Email" Text="{Binding UserName}"/>
 

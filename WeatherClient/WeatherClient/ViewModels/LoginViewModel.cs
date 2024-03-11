@@ -9,9 +9,57 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
 {
     private User _user;
 
-    public bool IsVisibleLogin { get; set; } = true;
-    public bool IsVisibleLogout { get; set; } = false;
-    public bool IsVisiblePasswordDeleteAccount { get; set; } = false;
+    private bool _isVisibleLogin = true;
+    private bool _isVisibleLogout = false;
+    private bool _isVisiblePasswordDeleteAccount = false;
+
+    public bool IsVisibleLogin
+    {
+        get
+        {
+            return _isVisibleLogin;
+        }
+        set
+        {
+            if (_isVisibleLogin != value)
+            {
+                _isVisibleLogin = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsVisibleLogout
+    {
+        get
+        {
+            return _isVisibleLogout;
+        }
+        set
+        {
+            if (_isVisibleLogout != value)
+            {
+                _isVisibleLogout = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsVisiblePasswordDeleteAccount
+    {
+        get
+        {
+            return _isVisiblePasswordDeleteAccount;
+        }
+        set
+        {
+            if (_isVisiblePasswordDeleteAccount != value)
+            {
+                _isVisiblePasswordDeleteAccount = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     public string UserName
     {
@@ -68,8 +116,6 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
             await _user.Login();
             IsVisibleLogin = false;
             IsVisibleLogout = true;
-            OnPropertyChanged(nameof(IsVisibleLogin));
-            OnPropertyChanged(nameof(IsVisibleLogout));
             // reset password at null because we want that user have to re-insert it in order to delete his account
             Password = null;
             // if login was successfull we go to Your Rules page
@@ -111,13 +157,8 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
             IsVisibleLogin = true;
             IsVisibleLogout = false;
             IsVisiblePasswordDeleteAccount = false;
-            OnPropertyChanged(nameof(IsVisibleLogin));
-            OnPropertyChanged(nameof(IsVisibleLogout));
-            OnPropertyChanged(nameof(IsVisiblePasswordDeleteAccount));
-            _user.Password = String.Empty;
-            _user.UserName = String.Empty;
-            OnPropertyChanged(nameof(Password));
-            OnPropertyChanged(nameof(UserName));
+            Password = String.Empty;
+            UserName = String.Empty;
             await Shell.Current.GoToAsync($"//AllRulesRoute?logout={true}");
             await Shell.Current.GoToAsync("//LoginRoute");
 
@@ -135,20 +176,14 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
         try
         {
             IsVisiblePasswordDeleteAccount = true;
-            OnPropertyChanged(nameof(IsVisiblePasswordDeleteAccount));
             if (Password != null)  // instead, if Password is null then user will have to insert it in order to delete account
             {
                 _user.DeleteAccount();
                 IsVisibleLogin = true;
                 IsVisibleLogout = false;
                 IsVisiblePasswordDeleteAccount = false;
-                OnPropertyChanged(nameof(IsVisibleLogin));
-                OnPropertyChanged(nameof(IsVisibleLogout));
-                OnPropertyChanged(nameof(IsVisiblePasswordDeleteAccount));
-                _user.Password = String.Empty;
-                _user.UserName = String.Empty;
-                OnPropertyChanged(nameof(Password));
-                OnPropertyChanged(nameof(UserName));
+                Password = String.Empty;
+                UserName = String.Empty;
             }
         }
         catch (Exception exc)
@@ -166,8 +201,6 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
         {
             IsVisibleLogin = false;
             IsVisibleLogout = true;
-            OnPropertyChanged(nameof(IsVisibleLogin));
-            OnPropertyChanged(nameof(IsVisibleLogout));
             var username = query["registered"].ToString();
             if (!string.IsNullOrEmpty(username))
             {
