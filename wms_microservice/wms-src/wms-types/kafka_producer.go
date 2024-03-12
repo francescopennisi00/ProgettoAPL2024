@@ -14,7 +14,7 @@ type KafkaProducer struct {
 	producer *kafka.Producer
 }
 
-func NewKafkaProducer(bootstrapServers, acks string) *KafkaProducer {
+func NewKafkaProducer(bootstrapServers string, acks string) *KafkaProducer {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": bootstrapServers,
 		"acks":              acks,
@@ -27,7 +27,7 @@ func NewKafkaProducer(bootstrapServers, acks string) *KafkaProducer {
 }
 
 // CreateTopic create topic if not yet exists
-func (kp *KafkaProducer) CreateTopic(broker, topicName string) {
+func (kp *KafkaProducer) CreateTopic(broker string, topicName string) {
 	admin, err := kafka.NewAdminClient(&kafka.ConfigMap{"bootstrap.servers": broker})
 	if err != nil {
 		log.SetPrefix("[ERROR] ")
@@ -52,7 +52,7 @@ func (kp *KafkaProducer) CreateTopic(broker, topicName string) {
 	}
 
 	if !topicExists {
-		// create topic if it does not exist
+		// create topic if it does not exist as kafka package requires
 		topicSpecs := []kafka.TopicSpecification{{
 			Topic:             topicName,
 			NumPartitions:     wmsUtils.KafkaTopicPartitions,
@@ -200,6 +200,7 @@ func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
 	for _, userConstraintsRow := range userConstraintsRows {
 
 		var rulesJson wmsUtils.RulesIntoDB
+		// we put 'rules' field (it is a json into DB row in third position) into rulesJson
 		if err := json.Unmarshal([]byte(userConstraintsRow[3]), &rulesJson); err != nil {
 			log.SetPrefix("[ERROR] ")
 			log.Printf("Error during unmarshaling of rules JSON from DB into KafkaMessage type: %v\n", err)
@@ -223,7 +224,7 @@ func (*KafkaProducer) MakeKafkaMessage(locationId string) (string, error) {
 		kMessage.SnowList = append(kMessage.SnowList, rulesJson.Snow)
 	}
 
-	kMessage.Location = locationRows[0] //the Kafka Message has only one location
+	kMessage.Location = locationRows[0] //the Kafka Message has only one location that is the only row returned
 
 	finalJsonBytes, errMar := json.Marshal(kMessage)
 	if errMar != nil {

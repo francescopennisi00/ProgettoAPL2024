@@ -111,6 +111,7 @@ func (s *UmWmsServer) RequestUserIdViaJWTToken(ctx context.Context, in *wmsUm.Re
 	password := row[0][1]
 
 	// verify JWT Token with password as secret
+	// Parse call the callback function passed as second parameter. So, Parse itself validate the token
 	token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(password), nil
 	})

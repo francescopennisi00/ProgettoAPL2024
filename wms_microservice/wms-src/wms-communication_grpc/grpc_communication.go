@@ -18,6 +18,7 @@ type WmsUmServer struct {
 	protoBuf.UnimplementedWMSUmServer
 }
 
+// RequestDeleteUserConstraints : WMS receives request to delete user constraints from UM
 func (s *WmsUmServer) RequestDeleteUserConstraints(ctx context.Context, in *protoBuf.User) (*protoBuf.ResponseCode, error) {
 
 	// extracting user id from the request

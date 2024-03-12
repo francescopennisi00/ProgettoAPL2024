@@ -54,6 +54,7 @@ func ShowRulesHandler(writer http.ResponseWriter, request *http.Request) {
 		wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in connecting to database: %v", err))
 		return
 	}
+	// user can be subscribed to many locations and in this case he will receive more ShowRulesOutput
 	var rulesList []wmsUtils.ShowRulesOutput // List of (location_info, rules, trigger_period key-value pairs)
 	query := fmt.Sprintf("SELECT location_id, rules, trigger_period, id FROM user_constraints WHERE user_id = %d", idUser)
 	_, userConstraintsRows, errorVar := dbConn.ExecuteQuery(query)

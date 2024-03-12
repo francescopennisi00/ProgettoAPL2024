@@ -230,6 +230,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in database insert: %v", err))
 				return
 			}
+			// idRule is useful for the client in order to load rule in UI
 			idRule, errorId := res.LastInsertId()
 			if errorId != nil {
 				wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in retrieving id of last insert item into 'user_constraints' table: %v", errorId))
@@ -242,6 +243,7 @@ func UpdateRulesHandler(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 	} else {
+		// we found user constraints
 		_, err := dbConn.BeginTransaction()
 		if err != nil {
 			wmsUtils.SetResponseMessage(writer, http.StatusInternalServerError, fmt.Sprintf("Error in starting DB transaction: %v", err))

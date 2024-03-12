@@ -16,7 +16,7 @@ var instance *SecretInitializer
 
 func NewSecretInitializer() *SecretInitializer {
 	if instance == nil {
-		lock.Lock()
+		lock.Lock() // wait until lock is available
 		defer lock.Unlock()
 		if instance == nil {
 			log.SetPrefix("[INFO] ")
