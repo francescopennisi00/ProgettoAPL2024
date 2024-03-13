@@ -52,7 +52,13 @@ namespace WeatherClient.Utilities
             {
                 // Obtain "email" claim
                 string email = jwtSecurityToken.Claims.FirstOrDefault(claim => claim.Type == "email")?.Value;
-                return email;
+                if (email != null)
+                {
+                    return email;
+                } else
+                {
+                    return "null";
+                }
             }
             else
             {

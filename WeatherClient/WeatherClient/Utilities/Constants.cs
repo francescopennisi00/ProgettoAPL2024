@@ -15,6 +15,5 @@ namespace WeatherClient.Utilities
         public const string urlLogin = "http://weather.com:8080/usermanager/login";
         public const string urlDeletAccount = "http://weather.com:8080/usermanager/delete_account";
         public static string tokenPath = FileSystem.AppDataDirectory + @"\JWT_token.txt";
-
-}
+    }
 }

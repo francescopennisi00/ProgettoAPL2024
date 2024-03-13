@@ -1,5 +1,6 @@
 ﻿using System.Windows.Input;
 using WeatherClient.Exceptions;
+using System.Text.RegularExpressions;
 
 namespace WeatherClient.ViewModels;
 
@@ -39,6 +40,11 @@ internal class SignupViewModel
         if (string.IsNullOrEmpty(UserName) || string.IsNullOrEmpty(Password))
         {
             await App.Current.MainPage.DisplayAlert("Warning", "Fill in the email and password fields.", "OK");
+            return;
+        }
+        if (!Regex.IsMatch(UserName, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"))
+        {
+            await App.Current.MainPage.DisplayAlert("Warning", "Email not valid.", "OK");
             return;
         }
         if (ConfirmPassword != Password)

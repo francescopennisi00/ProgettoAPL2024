@@ -89,7 +89,7 @@ internal class LoginViewModel : ObservableObject, IQueryAttributable
     {
         _user = new User();
 
-        // we assume that user is logged in, if he is not, then the other constructor is called
+        // we assume that user is logged in
         IsVisibleLogin = false;  
         IsVisibleLogout = true;
         var email = Utilities.TokenUtility.findUsernameByToken();

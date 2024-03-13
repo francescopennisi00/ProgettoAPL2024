@@ -11,14 +11,6 @@
     <Grid>
 
         <VerticalStackLayout x:Name="MasterStack">
-            <Grid Margin="40, 0" VerticalOptions="CenterAndExpand">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="3*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="3*"/>
-                </Grid.ColumnDefinitions>
-                <HorizontalStackLayout Grid.Column="1" x:Name="Icon"  Margin="0,20,0,20"/>
-            </Grid>
 
             <VerticalStackLayout x:Name="DataStack" VerticalOptions="CenterAndExpand" Margin="40,0,40,0">
 
