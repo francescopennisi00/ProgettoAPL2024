@@ -56,7 +56,7 @@ def find_event_not_sent():
     results = database_connector.execute_query("SELECT * FROM events WHERE sent=FALSE")
     if results:
         for x in results:
-            email = email_sender.fetch_email_address(x[1])
+            email = email_sender.fetch_email_address(x[1])  # x[1] is the user id
             if email == "null":
                 database_connector.close()
                 return False
@@ -74,7 +74,7 @@ def find_event_not_sent():
             loc_name = x[2]
             loc_country = x[3]
             loc_state = x[4]
-            rules_violated = json.loads(x[5])
+            rules_violated = json.loads(x[5])  # contains all the violated rules for the corresponding user
             res = email_sender.send_email(email, rules_violated, loc_name, loc_country, loc_state)
             if not res:
                 database_connector.close()

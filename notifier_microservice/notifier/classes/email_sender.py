@@ -54,6 +54,8 @@ class EmailSender:
         rules_list = violated_rules.get("violated_rules")  # extracting list of key-value pairs of violated_rules
         for element in rules_list:
             if element:
+                # we use next(iter) because we don't know which keys are present into key-value pairs associated as
+                # value for "violated_rules" key
                 rule = next(iter(element))
                 body += self.__insert_rule_in_mail_text(rule, element[rule], name_location, country, state)
         em = EmailMessage()

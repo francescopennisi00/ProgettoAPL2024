@@ -56,6 +56,8 @@ class KafkaConsumer:
         record_key = msg.key()
         logger.info("RECORD KEY " + str(record_key))
         record_value = msg.value()
+        # Kafka message is key-value pairs with keys = user_id values and values = other kay-valued pairs with key
+        # = violated rule name and value = actual value. There is also location key-values
         logger.info("RECORD VALUE " + str(record_value))
         data = json.loads(record_value)
         location_name = data.get("location")[0]
