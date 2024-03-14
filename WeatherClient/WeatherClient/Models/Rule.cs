@@ -91,10 +91,10 @@ internal class Rule
             throw new ServerException("Failed to load rules due an internal server error.");
         }
         var stringReturned = await response.Content.ReadAsStringAsync();
-        // next instructions only if request is an update and this update is an insert of a new rule
+        // next instructions only if request is an insert of a new _rule
         if (Id == String.Empty)
         {
-            // extracting id of the new rule inserted by regular expressions
+            // extracting id of the new _rule inserted by regular expressions
             Regex regex = new Regex(@"\d+");
             Match match = regex.Match(stringReturned);
             if (match.Success)
@@ -103,12 +103,12 @@ internal class Rule
             }
             else
             {
-                throw new ServerException("Error: server has not returned id of the rule inserted.");
+                throw new ServerException("Error: server has not returned id of the _rule inserted.");
             }
         }
         else
         {
-            return stringReturned;
+            return stringReturned; // in this case this return values is useless for the caller
         }
     }
 
@@ -140,13 +140,7 @@ internal class Rule
             {
                 if (rule.Id == id)
                 {
-                    return new()
-                    {
-                        Rules = rule.Rules,
-                        Id = rule.Id,
-                        TriggerPeriod = rule.TriggerPeriod,
-                        Location = rule.Location
-                    };
+                    return rule;
                 }
             }
             throw new Exception("Error! Rule not found!");

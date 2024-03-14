@@ -10,7 +10,7 @@ namespace WeatherClient.ViewModels;
 
 internal class RulesViewModel : ObservableObject, IQueryAttributable
 {
-    private Rule rule;
+    private Rule _rule;
     public ObservableCollection<RuleViewModel> AllRules { get; private set; }
 
     private bool _activeAddCommand = false;
@@ -70,7 +70,7 @@ internal class RulesViewModel : ObservableObject, IQueryAttributable
 
     public RulesViewModel(Rule rule)
     {
-        this.rule = rule;
+        this._rule = rule;
     }
 
     private async Task NewRuleAsync()
@@ -91,7 +91,7 @@ internal class RulesViewModel : ObservableObject, IQueryAttributable
             string id = query["deleted"].ToString();
             RuleViewModel matcheRule = AllRules.Where((n) => n.Id == id).FirstOrDefault();
 
-            // If rule exists, delete it
+            // If _rule exists, delete it
             if (matcheRule != null)
                 AllRules.Remove(matcheRule);
         }
@@ -100,14 +100,14 @@ internal class RulesViewModel : ObservableObject, IQueryAttributable
             string id = query["saved"].ToString();
             RuleViewModel matchedRule = AllRules.Where((n) => n.Id == id).FirstOrDefault();
 
-            // If rule is found, update it
+            // If _rule is found, update it
             if (matchedRule != null)
             {
                 matchedRule.Reload();
                 AllRules.Move(AllRules.IndexOf(matchedRule), 0);
             }
 
-            // If rule isn't found, it's new; add it.
+            // If _rule isn't found, it's new; add it.
             else
             {
                 try

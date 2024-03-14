@@ -10,6 +10,8 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
 {
     private Models.Rule _rule;
 
+    public bool IsEnableDeleteCommand { get; private set; }
+
     private bool _isEditableLocation;
     private bool _isNotEditableLocation;
 
@@ -550,6 +552,8 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
     public RuleViewModel(Models.Rule rule)
     {
         _rule = rule;
+        IsEditableLocation = false;
+        IsNotEditableLocation = true;
         SaveCommand = new AsyncRelayCommand(Save);
         DeleteCommand = new AsyncRelayCommand(Delete);
     }
@@ -565,10 +569,10 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
                 await Application.Current.MainPage.DisplayAlert(title, message, "OK");
                 return;
             }
-            // In case of success, id contains either id of the rule created into server or the string returned by server
+            // In case of success, id contains either id of the _rule created into server or the string returned by server
             // we are interested only in id (so we use id string variable only id Id == null)
             string id = await _rule.Save();
-            // if Id property is null, then saved rule is new and we have to assign to Id property its id
+            // if Id property is null, then saved _rule is new and we have to assign to Id property its id
             if (Id == String.Empty)
             {
                 Id = id;
@@ -632,6 +636,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
     {
         if (query.ContainsKey("load"))
         {
+            IsEnableDeleteCommand = true;
             try
             {
                 _rule = await Models.Rule.Load(query["load"].ToString());
@@ -654,7 +659,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
             catch (Exception)
             {
                 var title = "Error!";
-                var message = "Error in loading rule.";
+                var message = "Error in loading _rule.";
                 await Application.Current.MainPage.DisplayAlert(title, message, "OK");
                 await Shell.Current.GoToAsync(nameof(AllRulesPage));
             }
@@ -663,6 +668,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         {
             IsEditableLocation = true;
             IsNotEditableLocation = false;
+            IsEnableDeleteCommand = false;
         }
     }
 
@@ -689,7 +695,7 @@ internal class RuleViewModel : ObservableObject, IQueryAttributable
         catch (Exception)
         {
             var title = "Error!";
-            var message = "Error in loading rule.";
+            var message = "Error in loading _rule.";
             await Application.Current.MainPage.DisplayAlert(title, message, "OK");
             await Shell.Current.GoToAsync(nameof(AllRulesPage));
         }

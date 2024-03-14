@@ -179,7 +179,7 @@
                        Command="{Binding SaveCommand}"/>
                 <Button Grid.Column="1"
                         Text="Delete"
-                        Command="{Binding DeleteCommand}"/>
+                        Command="{Binding DeleteCommand}" IsEnabled="{Binding IsEnableDeleteCommand}"/>
             </Grid>
         </VerticalStackLayout>
     </ScrollView>
