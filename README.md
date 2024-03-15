@@ -67,7 +67,7 @@ For more details we recommend to read documentation. [Documentation.](https://gi
 ### Usage with C# WeatherClient
 You can interact with server-side application using C# WeatherClient.
 To do this, you can deploy WeatherClient application on your architecture or start it directly inside Visual Studio. <br>
-In both case, you have to open project at ./WeatherClient/WeatherClient/WeatherClient.csproj into Visual Studio.
+In both case, you have to open project at /WeatherClient/WeatherClient/WeatherClient.csproj into Visual Studio.
 If you simply want to start client application without deploying it, you have to select the target machine in the Visual Studio toolbar and click on "Run without executing debug".
 If you want to deploy app in your local machine, you must follow the guide at https://learn.microsoft.com/en-us/dotnet/maui/deployment/?view=net-maui-8.0.
 
