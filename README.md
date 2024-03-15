@@ -19,7 +19,7 @@ weather parameters, such as the maximum temperature or the possible presence of 
 These parameters will be monitored by the system itself, and if the specified weather conditions are violated,
 users will be notified by e-mail.
 To enable users to use the application more easily, a GUI-equipped client was developed.
-For more details we recommend to read documentation. [Documentation.](https://github.com/francescopennisi00/ProgettoDSBD/blob/main/docs/RelazioneDSBDGenovesePennisi2024.pdf)
+For more details we recommend to read documentation. [Documentation.](https://github.com/francescopennisi00/ProgettoAPL2024/blob/main/RelazioneAPLGenovesePennisi2024.pdf)
 
 ## Installation
 
@@ -107,7 +107,7 @@ You have to insert the request body in the <i> Body</i> section, select <i>raw</
 
 For next endpoints you have to put the JWT Token in the HTTP Header,
 with Authorization as key and "Bearer your_JWT_token" as value. 
-<br> All numerical values must be entered as strings such as "your_numerical_value" <br>
+<br> All numerical values must be entered as strings such as "your_numerical_value". <br>
 
 - wms/update_rules POST
 
