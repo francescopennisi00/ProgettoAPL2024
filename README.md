@@ -117,18 +117,18 @@ with Authorization as key and "Bearer your_JWT_token" as value.
       "location": ["location_name", "latitude", "longitude", "country_code", "state_code"],
       "rules" {
                 "max_temp" : "your value" or "null" if you are not interested,
-                "min_temp": your value or "null" if you are not interested,
-                "max_humidity": your value or "null" if you are not interested,
-                "min_humidity": your value or "null" if you are not interested,
-                "max_pressure": your value or "null" if you are not interested,
-                "min_pressure": your value or "null" if you are not interested,
-                "max_wind_speed": your value or "null" if you are not interested,
-                "min_wind_speed": your value or "null" if you are not interested,
-                "wind_direction": your value or "null" if you are not interested,
-                "rain": your value or "null" if you are not interested,
-                "snow": your value or "null" if you are not interested,
-                "max_cloud": your value or "null" if you are not interested,
-                "min_cloud": your value or "null" if you are not interested
+                "min_temp": "your value" or "null" if you are not interested,
+                "max_humidity": "your value" or "null" if you are not interested,
+                "min_humidity": "your value" or "null" if you are not interested,
+                "max_pressure": "your value" or "null" if you are not interested,
+                "min_pressure": "your value" or "null" if you are not interested,
+                "max_wind_speed": "your value" or "null" if you are not interested,
+                "min_wind_speed": "your value" or "null" if you are not interested,
+                "wind_direction": "your value" or "null" if you are not interested,
+                "rain": "rain" if you're interested or "null" if you are not interested,
+                "snow": "snow" if you're interested or "null" if you are not interested,
+                "max_cloud": "your value" or "null" if you are not interested,
+                "min_cloud": "your value" or "null" if you are not interested
                }
       }
 - wms/show_rules GET
