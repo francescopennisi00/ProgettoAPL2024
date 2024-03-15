@@ -30,7 +30,7 @@ For more details we recommend to read documentation. [Documentation.](https://gi
 
 ### Steps
 
--       git clone https://github.com/francescopennisi00/ProgettoDSBD.git
+-     git clone https://github.com/francescopennisi00/ProgettoDSBD.git
 - Secrets have to be created in /docker directory <br>
   #### How to create Secrets
   In order to run application on Docker, you need to create text files with your secrets and put them in /docker directory.
@@ -54,13 +54,13 @@ For more details we recommend to read documentation. [Documentation.](https://gi
 
 - Modify your /etc/hosts file in Linux or \Windows\System32\drivers\etc\hosts file in Windows and insert the following line:
 
-            127.0.0.1 localhost weather.com
+      127.0.0.1 localhost weather.com
 
 - Run application
   #### How to run application
   Open a terminal and go to the project directory and then in ./docker directory. Then execute <br>
 
-            docker compose up
+      docker compose up
 
 ## Usage
 
@@ -76,34 +76,34 @@ You can interact with server-side application using POSTMAN as client in order t
 For more information on the meaning and usefulness of endpoints we recommend to read documentation. [Documentation.](https://github.com/francescopennisi00/ProgettoAPL2024/blob/main/RelazioneAPLGenovesePennisi2024.pdf)
 <br> From POSTMAN, you have to use this base endpoint:
 
-            http://weather.com:8080
+    http://weather.com:8080
 
 ### Endpoints
 You have to insert the request body in the <i> Body</i> section, select <i>raw</i> and use JSON format. 
 
 - usermanager/register POST
 
-            //In this way we fill the request body 
-            {
-            "email": "your_email@gmail.com",
-            "password":"your_psw"
-            }
+      //In this way we fill the request body 
+      {
+      "email": "your_email@gmail.com",
+      "password":"your_psw"
+      }
 
 - usermanager/login POST
 
-            //In this way we fill the request body
-            {
-            "email": "your_email@gmail.com",
-            "password":"your_psw"
-            }
+      //In this way we fill the request body
+      {
+      "email": "your_email@gmail.com",
+      "password":"your_psw"
+      }
 
 - usermanager/delete_account POST
 
-            //In this way we fill the request body
-            {
-            "email": "your_email@gmail.com",
-            "password":"your_psw"
-            }
+      //In this way we fill the request body
+      {
+      "email": "your_email@gmail.com",
+      "password":"your_psw"
+      }
 
 For next endpoints you have to put the JWT Token in the HTTP Header,
 with Authorization as key and "Bearer your_JWT_token" as value. 
@@ -111,34 +111,34 @@ with Authorization as key and "Bearer your_JWT_token" as value.
 
 - wms/update_rules POST
 
-            //In this way we fill the request body 
-            {
-            "trigger_period": "trigger_period",
-            "location": ["location_name", "latitude", "longitude", "country_code", "state_code"],
-            "rules" {
-                      "max_temp" : "your value" or "null" if you are not interested,
-                      "min_temp": your value or "null" if you are not interested,
-                      "max_humidity": your value or "null" if you are not interested,
-                      "min_humidity": your value or "null" if you are not interested,
-                      "max_pressure": your value or "null" if you are not interested,
-                      "min_pressure": your value or "null" if you are not interested,
-                      "max_wind_speed": your value or "null" if you are not interested,
-                      "min_wind_speed": your value or "null" if you are not interested,
-                      "wind_direction": your value or "null" if you are not interested,
-                      "rain": your value or "null" if you are not interested,
-                      "snow": your value or "null" if you are not interested,
-                      "max_cloud": your value or "null" if you are not interested,
-                      "min_cloud": your value or "null" if you are not interested
-                     }
-            }
+      //In this way we fill the request body 
+      {
+      "trigger_period": "trigger_period",
+      "location": ["location_name", "latitude", "longitude", "country_code", "state_code"],
+      "rules" {
+                "max_temp" : "your value" or "null" if you are not interested,
+                "min_temp": your value or "null" if you are not interested,
+                "max_humidity": your value or "null" if you are not interested,
+                "min_humidity": your value or "null" if you are not interested,
+                "max_pressure": your value or "null" if you are not interested,
+                "min_pressure": your value or "null" if you are not interested,
+                "max_wind_speed": your value or "null" if you are not interested,
+                "min_wind_speed": your value or "null" if you are not interested,
+                "wind_direction": your value or "null" if you are not interested,
+                "rain": your value or "null" if you are not interested,
+                "snow": your value or "null" if you are not interested,
+                "max_cloud": your value or "null" if you are not interested,
+                "min_cloud": your value or "null" if you are not interested
+               }
+      }
 - wms/show_rules GET
 
 - wms/update_rules/delete_user_constraints_by_location POST
 
-            //In this way we fill the request body
-            {
-            "location": ["location_name", "latitude", "longitude", "country_code", "state_code"]
-            }
+      //In this way we fill the request body
+      {
+      "location": ["location_name", "latitude", "longitude", "country_code", "state_code"]
+      }
 
 ## Contributing
 We welcome contributions from the community! If you'd like to contribute, please follow these steps:
